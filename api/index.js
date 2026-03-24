@@ -36,6 +36,7 @@ const Class = mongoose.models.Class || mongoose.model('Class', classSchema);
 const paymentSchema = new mongoose.Schema({
   studentId: { type: String, required: true },
   month: Number, year: Number, amount: Number, paidAt: String,
+  referenceCode: String, gateway: String, paymentMethod: { type: String, default: 'manual' },
 }, { timestamps: true });
 const Payment = mongoose.models.Payment || mongoose.model('Payment', paymentSchema);
 
@@ -164,6 +165,75 @@ paymentsRouter.post('/toggle', async (req, res) => {
     await Payment.create({ studentId, month, year, paidAt: new Date().toISOString().split('T')[0] });
     res.json({ action: 'added' });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// SePay Webhook (PUBLIC — no auth, verified by API key)
+app.post('/api/webhook/sepay', async (req, res) => {
+  try {
+    const apiKey = req.headers['authorization'];
+    const expectedKey = `Apikey ${process.env.SEPAY_API_KEY}`;
+    if (process.env.SEPAY_API_KEY && apiKey !== expectedKey) {
+      return res.status(401).json({ success: false, message: 'Invalid API Key' });
+    }
+
+    const { id, gateway, transactionDate, accountNumber, code, content, transferType, transferAmount, referenceCode } = req.body;
+
+    // Chỉ xử lý tiền vào
+    if (transferType !== 'in') return res.json({ success: true, message: 'Ignored: not incoming' });
+
+    // Chống trùng lặp bằng referenceCode
+    const existingRef = await Payment.findOne({ referenceCode });
+    if (existingRef) return res.json({ success: true, message: 'Duplicate: already processed' });
+
+    // Parse nội dung: format "EH <username> <month> <year>"
+    const match = (content || '').toUpperCase().match(/EH\s+(\S+)\s+(\d{1,2})\s+(\d{4})/);
+    if (!match) {
+      console.log('SePay webhook: no matching code in content:', content);
+      return res.json({ success: true, message: 'No payment code found' });
+    }
+
+    const [, usernameCode, monthStr, yearStr] = match;
+    const month = parseInt(monthStr);
+    const year = parseInt(yearStr);
+
+    // Tìm user account bằng username
+    const userAccount = await User.findOne({ username: usernameCode.toLowerCase() });
+    if (!userAccount || !userAccount.studentId) {
+      console.log('SePay webhook: no student found for code:', usernameCode);
+      return res.json({ success: true, message: 'Student not found' });
+    }
+
+    // Kiểm tra đã đóng chưa
+    const alreadyPaid = await Payment.findOne({ studentId: userAccount.studentId.toString(), month, year });
+    if (alreadyPaid) return res.json({ success: true, message: 'Already paid' });
+
+    // Tạo Payment record
+    await Payment.create({
+      studentId: userAccount.studentId.toString(),
+      month, year,
+      amount: transferAmount,
+      paidAt: transactionDate || new Date().toISOString().split('T')[0],
+      referenceCode,
+      gateway,
+      paymentMethod: 'bank_transfer',
+    });
+
+    console.log(`✅ SePay: Auto-confirmed payment for ${usernameCode} - ${month}/${year}`);
+    return res.status(200).json({ success: true });
+  } catch (e) {
+    console.error('SePay webhook error:', e);
+    return res.status(200).json({ success: true, message: 'Error but acknowledged' });
+  }
+});
+
+// Payment config (public — cho học sinh xem thông tin chuyển khoản)
+app.get('/api/payment-config', (_, res) => {
+  res.json({
+    bankAccount: process.env.BANK_ACCOUNT || '96247L30JQ',
+    bankName: process.env.BANK_NAME || 'BIDV',
+    beneficiary: process.env.BANK_BENEFICIARY || 'DAO LE DIEM MY',
+    tuitionAmount: parseInt(process.env.TUITION_AMOUNT || '500000'),
+  });
 });
 
 app.use('/api/students', auth, studentsRouter);

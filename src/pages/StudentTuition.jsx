@@ -1,13 +1,14 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { getLevelInfo } from '../utils/data';
-import { BANK_INFO } from '../utils/roles';
+import api from '../utils/api';
 
 import {
   HiOutlineSparkles, HiOutlineLogout, HiOutlineCheck,
   HiOutlineExclamation, HiOutlineCash, HiOutlinePhone,
   HiOutlineAcademicCap, HiOutlineCalendar, HiOutlineQrcode,
+  HiOutlineClipboard, HiOutlineRefresh,
 } from 'react-icons/hi';
 import './StudentTuition.css';
 
@@ -19,7 +20,21 @@ const MONTH_NAMES = [
 export default function StudentTuition() {
   const { user, logout, roleLabel } = useAuth();
   const [students] = useApi('/students');
-  const [payments] = useApi('/payments');
+  const [payments, , refetchPayments] = useApi('/payments');
+  const [paymentConfig, setPaymentConfig] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  // Lấy config thanh toán (bank info)
+  useEffect(() => {
+    api.get('/payment-config').then(setPaymentConfig).catch(() => {
+      setPaymentConfig({
+        bankAccount: '96247L30JQ',
+        bankName: 'BIDV',
+        beneficiary: 'DAO LE DIEM MY',
+        tuitionAmount: 500000,
+      });
+    });
+  }, []);
 
   // Tìm học sinh theo studentId từ JWT
   const student = useMemo(() => {
@@ -68,11 +83,25 @@ export default function StudentTuition() {
 
   // QR code: tạo nội dung chuyển khoản cho tháng chưa đóng gần nhất
   const nextUnpaidMonth = months.find(m => m.type !== 'future' && !isPaid(m.month, m.year));
-  
 
+  // Tạo mã thanh toán: EH <username> <month> <year>
+  const paymentCode = nextUnpaidMonth && user?.username
+    ? `EH ${user.username} ${nextUnpaidMonth.month} ${nextUnpaidMonth.year}`
+    : '';
+
+  // SePay QR Code URL
+  const qrUrl = paymentConfig && nextUnpaidMonth
+    ? `https://qr.sepay.vn/img?acc=${paymentConfig.bankAccount}&bank=${paymentConfig.bankName}&amount=${paymentConfig.tuitionAmount}&des=${encodeURIComponent(paymentCode)}`
+    : '';
 
   const formatMoney = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   if (!student) {
@@ -182,10 +211,15 @@ export default function StudentTuition() {
           </div>
         </div>
 
-        {/* QR Code Payment */}
-        {nextUnpaidMonth && (
+        {/* QR Code Payment - SePay */}
+        {nextUnpaidMonth && paymentConfig && (
           <div className="qr-payment-card">
-            <h3><HiOutlineQrcode /> Thanh toán bằng QR</h3>
+            <div className="qr-payment-header">
+              <h3><HiOutlineQrcode /> Thanh toán học phí</h3>
+              <button className="refresh-btn" onClick={refetchPayments} title="Kiểm tra lại">
+                <HiOutlineRefresh /> Kiểm tra
+              </button>
+            </div>
             <p className="subtitle">
               Quét mã QR để chuyển khoản học phí {MONTH_NAMES[nextUnpaidMonth.month - 1]} {nextUnpaidMonth.year}
             </p>
@@ -193,35 +227,47 @@ export default function StudentTuition() {
             <div className="qr-section-layout">
               <div className="qr-wrapper">
                 <img
-                  src="/qr-payment.png"
+                  src={qrUrl}
                   alt="QR Code thanh toán VietQR"
-                  style={{ width: 200, height: 200, objectFit: 'contain' }}
+                  className="qr-image"
                 />
+                <div className="qr-powered">Powered by <strong>SePay</strong> × <strong>VietQR</strong></div>
               </div>
 
               <div className="bank-info">
                 <div className="bank-info-row">
-                  <span className="label">Ngân hàng</span>
-                  <span className="value">{BANK_INFO.bankName}</span>
+                  <span className="label">🏦 Ngân hàng</span>
+                  <span className="value">{paymentConfig.bankName}</span>
                 </div>
                 <div className="bank-info-row">
-                  <span className="label">Số tài khoản</span>
-                  <span className="value">{BANK_INFO.accountNumber}</span>
+                  <span className="label">📋 Số tài khoản</span>
+                  <span className="value">{paymentConfig.bankAccount}</span>
                 </div>
                 <div className="bank-info-row">
-                  <span className="label">Chủ tài khoản</span>
-                  <span className="value">{BANK_INFO.accountHolder}</span>
+                  <span className="label">👤 Chủ tài khoản</span>
+                  <span className="value">{paymentConfig.beneficiary}</span>
                 </div>
                 <div className="bank-info-row">
-                  <span className="label">Số tiền</span>
-                  <span className="value amount-highlight">{formatMoney(BANK_INFO.tuitionFee)}</span>
+                  <span className="label">💰 Số tiền</span>
+                  <span className="value amount-highlight">{formatMoney(paymentConfig.tuitionAmount)}</span>
                 </div>
               </div>
             </div>
 
             <div className="transfer-note">
-              <div className="label">Nội dung chuyển khoản</div>
-              <div className="content">{student.name} - HP {MONTH_NAMES[nextUnpaidMonth.month - 1]} {nextUnpaidMonth.year}</div>
+              <div className="label">📝 Nội dung chuyển khoản (bắt buộc)</div>
+              <div className="content-row">
+                <code className="content">{paymentCode}</code>
+                <button
+                  className="copy-btn"
+                  onClick={() => copyToClipboard(paymentCode)}
+                >
+                  <HiOutlineClipboard /> {copied ? 'Đã copy!' : 'Copy'}
+                </button>
+              </div>
+              <p className="note-hint">
+                ⚠️ Vui lòng ghi đúng nội dung để hệ thống tự động xác nhận thanh toán
+              </p>
             </div>
           </div>
         )}

@@ -310,63 +310,61 @@
 .month-cell.unpaid .month-status { color: #ef4444; }
 .month-cell.future .month-status { color: var(--text-muted); }
 
-/* === QR Payment Card === */
-.qr-payment-card {
-  background: linear-gradient(135deg, rgba(30, 33, 72, 0.7), rgba(22, 24, 55, 0.9));
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 36px 28px 32px;
-  animation: fadeIn 0.4s ease-out 0.2s backwards;
-  position: relative;
-  overflow: hidden;
-}
-
-.qr-payment-card::before {
-  content: '';
-  position: absolute;
-  bottom: -60%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(79, 140, 255, 0.06), transparent 70%);
-  pointer-events: none;
-}
-
-.qr-payment-card h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin-bottom: 6px;
-  color: var(--text-primary);
+/* QR payment header row */
+.qr-payment-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 6px;
   position: relative;
   z-index: 1;
 }
 
-.qr-payment-card .subtitle {
-  color: var(--text-muted);
-  font-size: 0.82rem;
-  margin-bottom: 28px;
-  text-align: center;
-  position: relative;
-  z-index: 1;
+.qr-payment-header h3 {
+  justify-content: flex-start;
+  margin-bottom: 0;
 }
 
-.qr-section-layout {
+.refresh-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(79, 140, 255, 0.1);
+  border: 1px solid rgba(79, 140, 255, 0.2);
+  color: var(--accent-blue);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 40px;
-  flex-wrap: wrap;
-  position: relative;
-  z-index: 1;
+  align-items: center;
+  gap: 4px;
+}
+
+.refresh-btn:hover {
+  background: rgba(79, 140, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+/* QR image */
+.qr-image {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.qr-powered {
+  text-align: center;
+  font-size: 0.68rem;
+  color: #999;
+  margin-top: 8px;
+  padding: 0 8px;
 }
 
 .qr-wrapper {
   display: inline-flex;
+  flex-direction: column;
   padding: 16px;
   background: white;
   border-radius: 16px;
@@ -374,51 +372,10 @@
   flex-shrink: 0;
 }
 
-.bank-info {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1;
-  min-width: 280px;
-  max-width: 340px;
-}
-
-.bank-info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  font-size: 0.82rem;
-  transition: background 0.2s ease;
-}
-
-.bank-info-row:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.bank-info-row .label {
-  color: var(--text-muted);
-  font-weight: 500;
-}
-
-.bank-info-row .value {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.amount-highlight {
-  color: var(--accent-blue) !important;
-  font-size: 1rem !important;
-  font-weight: 700 !important;
-}
-
 /* Transfer note */
 .transfer-note {
   margin-top: 20px;
-  padding: 14px 18px;
+  padding: 18px 20px;
   background: rgba(79, 140, 255, 0.06);
   border: 1px solid rgba(79, 140, 255, 0.12);
   border-radius: 12px;
@@ -431,14 +388,55 @@
 .transfer-note .label {
   color: var(--text-muted);
   font-weight: 500;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+}
+
+.content-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
 .transfer-note .content {
   color: var(--accent-blue);
   font-weight: 700;
-  font-size: 0.9rem;
-  letter-spacing: 0.01em;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  padding: 8px 16px;
+  background: rgba(79, 140, 255, 0.08);
+  border: 1px solid rgba(79, 140, 255, 0.15);
+  border-radius: 8px;
+}
+
+.copy-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+  border: none;
+  color: white;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.copy-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(79, 140, 255, 0.3);
+}
+
+.note-hint {
+  color: var(--accent-amber, #f59e0b);
+  font-size: 0.72rem;
+  font-weight: 500;
+  margin: 0;
 }
 
 /* Responsive */
