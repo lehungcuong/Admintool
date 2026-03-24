@@ -110,7 +110,7 @@ export default function StudentTuition() {
         <header className="student-header">
           <div className="student-header-left">
             <div className="student-header-logo"><HiOutlineSparkles /></div>
-            <h2>EnglishHub</h2>
+            <h2>Phúc Ngôn</h2>
           </div>
           <button className="logout-btn" onClick={logout}>
             <HiOutlineLogout /> Đăng xuất
@@ -133,7 +133,7 @@ export default function StudentTuition() {
       <header className="student-header">
         <div className="student-header-left">
           <div className="student-header-logo"><HiOutlineSparkles /></div>
-          <h2>EnglishHub</h2>
+          <h2>Phúc Ngôn</h2>
         </div>
         <div className="student-header-right">
           <div className="student-user-info">
@@ -247,7 +247,7 @@ export default function StudentTuition() {
                   <span className="label">👤 Chủ tài khoản</span>
                   <span className="value">{paymentConfig.beneficiary}</span>
                 </div>
-                <div className="bank-info-row">
+                <div className="bank-info-row highlight">
                   <span className="label">💰 Số tiền</span>
                   <span className="value amount-highlight">{formatMoney(paymentConfig.tuitionAmount)}</span>
                 </div>
@@ -255,7 +255,7 @@ export default function StudentTuition() {
             </div>
 
             <div className="transfer-note">
-              <div className="label">📝 Nội dung chuyển khoản (bắt buộc)</div>
+              <div className="note-label">📝 Nội dung chuyển khoản (bắt buộc)</div>
               <div className="content-row">
                 <code className="content">{paymentCode}</code>
                 <button

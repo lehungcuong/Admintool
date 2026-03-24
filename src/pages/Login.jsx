@@ -25,8 +25,7 @@ export default function Login() {
     setError('');
   };
 
-  // Only show staff accounts as demo chips
-  const demoUsers = STAFF_USERS;
+
 
   return (
     <div className="login-page">
@@ -35,7 +34,7 @@ export default function Login() {
           <div className="login-logo-icon">
             <HiOutlineSparkles />
           </div>
-          <h1>EnglishHub</h1>
+          <h1>Phúc Ngôn</h1>
           <p>Đăng nhập để tiếp tục</p>
         </div>
 
@@ -77,28 +76,6 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="login-demo">
-          <h4>Tài khoản demo</h4>
-          <div className="demo-accounts">
-            {demoUsers.map((u, i) => (
-              <button
-                key={i}
-                className="demo-chip"
-                style={{
-                  background: (ROLE_COLORS[u.role] || '#888') + '20',
-                  color: ROLE_COLORS[u.role] || '#888',
-                }}
-                onClick={() => fillDemo(u)}
-                title={`${u.username} / ${u.password}`}
-              >
-                {u.displayName}
-                <span style={{ opacity: 0.6, marginLeft: 4, fontSize: '0.65rem' }}>
-                  {ROLE_LABELS[u.role]}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

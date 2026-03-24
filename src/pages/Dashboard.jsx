@@ -50,7 +50,7 @@ export default function Dashboard() {
     <div className="animate-fadeIn">
       <div className="page-header">
         <h1>Dashboard</h1>
-        <p>Tổng quan trung tâm tiếng Anh EnglishHub</p>
+        <p>Tổng quan Trung Tâm Anh Ngữ Phúc Ngôn</p>
       </div>
 
       <div className="stats-grid">

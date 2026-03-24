@@ -72,8 +72,8 @@ export default function Sidebar() {
             <HiOutlineSparkles />
           </div>
           <div className="logo-text">
-            <h2>EnglishHub</h2>
-            <span>Management</span>
+            <h2>Phúc Ngôn</h2>
+            <span>Anh Ngữ</span>
           </div>
           {/* Close button inside sidebar on mobile */}
           <button
