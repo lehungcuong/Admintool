@@ -1,15 +1,21 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/Admintool/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="EnglishHub - Phần mềm quản lý trung tâm tiếng Anh" />
-    <title>EnglishHub - Quản lý trung tâm tiếng Anh</title>
-    <script type="module" crossorigin src="/Admintool/assets/index-B6pCrE_D.js"></script>
-    <link rel="stylesheet" crossorigin href="/Admintool/assets/index-hHo4MMF9.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>EnglishHub</title>
+  <script>
+    // SPA redirect for GitHub Pages
+    // Redirects all 404 paths to index.html with the path preserved
+    var pathSegmentsToKeep = 1; // /Admintool/
+    var l = window.location;
+    l.replace(
+      l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+      l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+      l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+      (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+      l.hash
+    );
+  </script>
+</head>
+<body></body>
 </html>
