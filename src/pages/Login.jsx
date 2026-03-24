@@ -1,0 +1,105 @@
+import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { STAFF_USERS, ROLE_LABELS, ROLE_COLORS } from '../utils/roles';
+import { HiOutlineSparkles, HiOutlineExclamation } from 'react-icons/hi';
+import './Login.css';
+
+export default function Login() {
+  const { login } = useAuth();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+    const result = login(username.trim(), password);
+    if (!result.success) {
+      setError(result.error);
+    }
+  };
+
+  const fillDemo = (u) => {
+    setUsername(u.username);
+    setPassword(u.password);
+    setError('');
+  };
+
+  // Only show staff accounts as demo chips
+  const demoUsers = STAFF_USERS;
+
+  return (
+    <div className="login-page">
+      <div className="login-card">
+        <div className="login-logo">
+          <div className="login-logo-icon">
+            <HiOutlineSparkles />
+          </div>
+          <h1>EnglishHub</h1>
+          <p>Đăng nhập để tiếp tục</p>
+        </div>
+
+        <form className="login-form" onSubmit={handleSubmit}>
+          <div className="login-input-group">
+            <label>Tên đăng nhập</label>
+            <input
+              id="login-username"
+              type="text"
+              placeholder="Nhập tên đăng nhập"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              autoFocus
+              autoComplete="username"
+            />
+          </div>
+
+          <div className="login-input-group">
+            <label>Mật khẩu</label>
+            <input
+              id="login-password"
+              type="password"
+              placeholder="Nhập mật khẩu"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+          </div>
+
+          {error && (
+            <div className="login-error">
+              <HiOutlineExclamation />
+              {error}
+            </div>
+          )}
+
+          <button type="submit" className="login-btn" id="login-submit">
+            Đăng nhập
+          </button>
+        </form>
+
+        <div className="login-demo">
+          <h4>Tài khoản demo</h4>
+          <div className="demo-accounts">
+            {demoUsers.map((u, i) => (
+              <button
+                key={i}
+                className="demo-chip"
+                style={{
+                  background: (ROLE_COLORS[u.role] || '#888') + '20',
+                  color: ROLE_COLORS[u.role] || '#888',
+                }}
+                onClick={() => fillDemo(u)}
+                title={`${u.username} / ${u.password}`}
+              >
+                {u.displayName}
+                <span style={{ opacity: 0.6, marginLeft: 4, fontSize: '0.65rem' }}>
+                  {ROLE_LABELS[u.role]}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
