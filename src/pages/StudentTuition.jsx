@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useApi } from '../hooks/useApi';
 import { getLevelInfo } from '../utils/data';
 import { BANK_INFO } from '../utils/roles';
 
@@ -18,12 +18,13 @@ const MONTH_NAMES = [
 
 export default function StudentTuition() {
   const { user, logout, roleLabel } = useAuth();
-  const [students] = useLocalStorage('students', []);
-  const [payments] = useLocalStorage('payments', []);
+  const [students] = useApi('/students');
+  const [payments] = useApi('/payments');
 
-  // Tìm học sinh theo tên đăng nhập
+  // Tìm học sinh theo studentId từ JWT
   const student = useMemo(() => {
-    return students.find(s => s.name === user?.studentName) || null;
+    if (!user?.studentId) return null;
+    return students.find(s => s.id === user.studentId) || null;
   }, [students, user]);
 
   const now = new Date();

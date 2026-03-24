@@ -1,14 +1,14 @@
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useApi } from '../hooks/useApi';
 import { CLASS_LEVELS, getLevelInfo, PAYMENT_STATUSES } from '../utils/data';
 import { HiOutlineUserGroup, HiOutlineAcademicCap, HiOutlineBriefcase, HiOutlineChartBar } from 'react-icons/hi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 export default function Dashboard() {
-  const [students] = useLocalStorage('students', []);
-  const [classes] = useLocalStorage('classes', []);
-  const [teachers] = useLocalStorage('teachers', []);
-  const [enrollments] = useLocalStorage('enrollments', []);
-  const [payments] = useLocalStorage('payments', []);
+  const [students] = useApi('/students');
+  const [classes] = useApi('/classes');
+  const [teachers] = useApi('/teachers');
+  const [enrollments] = useApi('/enrollments');
+  const [payments] = useApi('/payments');
 
   const activeStudents = students.filter(s => s.status === 'active').length;
   const activeTeachers = teachers.filter(t => t.status === 'active').length;

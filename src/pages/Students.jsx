@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useApi } from '../hooks/useApi';
+import api from '../utils/api';
 import { useToast } from '../components/Toast';
-import { CLASS_LEVELS, getLevelInfo, getPaymentInfo, generateId } from '../utils/data';
-import { createStudentAccount, deleteStudentAccount, createStudentAccountsBatch } from '../utils/roles';
+import { CLASS_LEVELS, getLevelInfo, getPaymentInfo } from '../utils/data';
 import { HiOutlineSearch, HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineUpload, HiOutlineDownload, HiOutlineKey } from 'react-icons/hi';
 
 // Map Vietnamese/English column names to our fields
@@ -13,7 +13,6 @@ const COLUMN_MAP = {
   'ngày sinh': 'dob', 'ngay sinh': 'dob', 'dob': 'dob', 'date of birth': 'dob', 'birthday': 'dob', 'sinh nhật': 'dob', 'năm sinh': 'dob',
   'cấp độ': 'level', 'cap do': 'level', 'level': 'level', 'lớp': 'level', 'lop': 'level', 'class': 'level',
   'trạng thái': 'status', 'trang thai': 'status', 'status': 'status',
-  'học phí': 'payment', 'hoc phi': 'payment', 'payment': 'payment', 'đóng tiền': 'payment', 'dong tien': 'payment', 'thanh toán': 'payment', 'thanh toan': 'payment',
 };
 
 const LEVEL_MAP = {
@@ -24,19 +23,14 @@ const LEVEL_MAP = {
   'ket': 'ket',
 };
 
-const PAYMENT_MAP = {
-  'đã đóng': 'paid', 'da dong': 'paid', 'paid': 'paid', 'đã': 'paid', 'rồi': 'paid', 'xong': 'paid', 'done': 'paid', 'yes': 'paid', 'có': 'paid', 'co': 'paid',
-  'chưa đóng': 'unpaid', 'chua dong': 'unpaid', 'unpaid': 'unpaid', 'chưa': 'unpaid', 'no': 'unpaid', 'không': 'unpaid', 'khong': 'unpaid',
-};
-
 const STATUS_MAP = {
   'đang học': 'active', 'dang hoc': 'active', 'active': 'active', 'đang': 'active',
   'tạm nghỉ': 'inactive', 'tam nghi': 'inactive', 'inactive': 'inactive', 'nghỉ': 'inactive',
 };
 
 export default function Students() {
-  const [students, setStudents] = useLocalStorage('students', []);
-  const [payments, setPayments] = useLocalStorage('payments', []);
+  const [students, setStudents, { refetch }] = useApi('/students');
+  const [payments] = useApi('/payments');
   const [search, setSearch] = useState('');
   const [filterLevel, setFilterLevel] = useState('all');
   const [modal, setModal] = useState(null);
@@ -44,7 +38,7 @@ export default function Students() {
   const [importData, setImportData] = useState([]);
   const fileInputRef = useRef(null);
   const addToast = useToast();
-  const [createdAccount, setCreatedAccount] = useState(null); // { username, password, studentName }
+  const [createdAccount, setCreatedAccount] = useState(null);
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
@@ -53,24 +47,25 @@ export default function Students() {
     return payments.some(p => p.studentId === studentId && p.month === currentMonth && p.year === currentYear);
   };
 
-  const togglePayment = (studentId) => {
-    if (isStudentPaidThisMonth(studentId)) {
-      setPayments(prev => prev.filter(p => !(p.studentId === studentId && p.month === currentMonth && p.year === currentYear)));
-    } else {
-      setPayments(prev => [...prev, { studentId, month: currentMonth, year: currentYear, paidAt: new Date().toISOString().split('T')[0] }]);
+  const togglePayment = async (studentId) => {
+    try {
+      await api.post('/payments/toggle', { studentId, month: currentMonth, year: currentYear });
+      refetch();
+    } catch (err) {
+      addToast('Lỗi cập nhật thanh toán: ' + err.message, 'error');
     }
   };
 
-  const [form, setForm] = useState({ name: '', phone: '', dob: '', level: 'prestarter', status: 'active', payment: 'unpaid' });
+  const [form, setForm] = useState({ name: '', phone: '', dob: '', level: 'prestarter', status: 'active' });
 
   const filtered = students.filter(s => {
-    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.phone.includes(search);
+    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || (s.phone || '').includes(search);
     const matchLevel = filterLevel === 'all' || s.level === filterLevel;
     return matchSearch && matchLevel;
   });
 
   const openAdd = () => {
-    setForm({ name: '', phone: '', dob: '', level: 'prestarter', status: 'active', payment: 'unpaid' });
+    setForm({ name: '', phone: '', dob: '', level: 'prestarter', status: 'active' });
     setModal('add');
   };
 
@@ -85,28 +80,34 @@ export default function Students() {
     setModal('delete');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim()) return;
-    if (modal === 'add') {
-      const newId = generateId();
-      setStudents(prev => [...prev, { ...form, id: newId }]);
-      // Auto-generate student account
-      const { username, password } = createStudentAccount(newId, form.name.trim());
-      setCreatedAccount({ username, password, studentName: form.name.trim() });
-      setModal('account-created');
-      addToast('Thêm học sinh thành công!');
-    } else {
-      setStudents(prev => prev.map(s => s.id === editingStudent.id ? { ...form, id: editingStudent.id } : s));
-      addToast('Cập nhật học sinh thành công!');
-      setModal(null);
+    try {
+      if (modal === 'add') {
+        const result = await api.post('/students', form);
+        setCreatedAccount({ username: result.username, password: result.password, studentName: form.name.trim() });
+        setModal('account-created');
+        addToast('Thêm học sinh thành công!');
+      } else {
+        await api.put(`/students/${editingStudent.id}`, form);
+        addToast('Cập nhật học sinh thành công!');
+        setModal(null);
+      }
+      refetch();
+    } catch (err) {
+      addToast('Lỗi: ' + err.message, 'error');
     }
   };
 
-  const handleDelete = () => {
-    deleteStudentAccount(editingStudent.id);
-    setStudents(prev => prev.filter(s => s.id !== editingStudent.id));
-    addToast('Đã xoá học sinh và tài khoản!', 'info');
-    setModal(null);
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/students/${editingStudent.id}`);
+      addToast('Đã xoá học sinh và tài khoản!', 'info');
+      setModal(null);
+      refetch();
+    } catch (err) {
+      addToast('Lỗi: ' + err.message, 'error');
+    }
   };
 
   // --- Excel Import ---
@@ -125,21 +126,17 @@ export default function Students() {
           return;
         }
 
-        // Map columns
         const mapped = rawData.map(row => {
-          const student = { name: '', phone: '', dob: '', level: 'prestarter', status: 'active', payment: 'unpaid' };
+          const student = { name: '', phone: '', dob: '', level: 'prestarter', status: 'active' };
           Object.entries(row).forEach(([col, val]) => {
             const key = COLUMN_MAP[col.toLowerCase().trim()];
             if (!key) return;
             const v = String(val).trim();
             if (key === 'level') {
               student.level = LEVEL_MAP[v.toLowerCase()] || 'prestarter';
-            } else if (key === 'payment') {
-              student.payment = PAYMENT_MAP[v.toLowerCase()] || 'unpaid';
             } else if (key === 'status') {
               student.status = STATUS_MAP[v.toLowerCase()] || 'active';
             } else if (key === 'dob') {
-              // Handle Excel serial dates or string dates
               if (typeof val === 'number') {
                 const d = XLSX.SSF.parse_date_code(val);
                 student.dob = `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
@@ -169,14 +166,16 @@ export default function Students() {
     e.target.value = '';
   };
 
-  const handleImportConfirm = () => {
-    const newStudents = importData.map(s => ({ ...s, id: generateId() }));
-    // Batch create accounts
-    const studentsWithAccounts = createStudentAccountsBatch(newStudents);
-    setStudents(prev => [...prev, ...newStudents]);
-    addToast(`Đã import ${newStudents.length} học sinh (tài khoản đã tạo tự động)!`);
-    setImportData([]);
-    setModal(null);
+  const handleImportConfirm = async () => {
+    try {
+      await api.post('/students/bulk', importData);
+      addToast(`Đã import ${importData.length} học sinh (tài khoản đã tạo tự động)!`);
+      setImportData([]);
+      setModal(null);
+      refetch();
+    } catch (err) {
+      addToast('Lỗi import: ' + err.message, 'error');
+    }
   };
 
 
@@ -431,7 +430,6 @@ export default function Students() {
                     <th>Điện thoại</th>
                     <th>Ngày sinh</th>
                     <th>Cấp độ</th>
-                    <th>Học phí</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -442,11 +440,6 @@ export default function Students() {
                       <td>{s.phone}</td>
                       <td>{s.dob}</td>
                       <td><span className={`badge badge-${s.level}`}>{getLevelInfo(s.level).name}</span></td>
-                      <td>
-                        <span className="badge" style={{ background: getPaymentInfo(s.payment).color + '18', color: getPaymentInfo(s.payment).color }}>
-                          {getPaymentInfo(s.payment).name}
-                        </span>
-                      </td>
                     </tr>
                   ))}
                 </tbody>

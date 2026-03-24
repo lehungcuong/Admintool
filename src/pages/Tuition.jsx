@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useApi } from '../hooks/useApi';
+import api from '../utils/api';
 import { useToast } from '../components/Toast';
 import { CLASS_LEVELS, getLevelInfo } from '../utils/data';
 import { HiOutlineCash, HiOutlineCheck, HiOutlineExclamation, HiOutlineSearch, HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi';
@@ -10,8 +11,8 @@ const MONTH_NAMES = [
 ];
 
 export default function Tuition() {
-  const [students] = useLocalStorage('students', []);
-  const [payments, setPayments] = useLocalStorage('payments', []);
+  const [students] = useApi('/students');
+  const [payments, setPayments, { refetch }] = useApi('/payments');
   const [filterLevel, setFilterLevel] = useState('all');
   const [search, setSearch] = useState('');
   const addToast = useToast();
@@ -36,33 +37,25 @@ export default function Tuition() {
     return payments.some(p => p.studentId === studentId && p.month === selectedMonth && p.year === selectedYear);
   };
 
-  const togglePayment = (studentId) => {
+  const togglePayment = async (studentId) => {
     if (isFuture) return;
-    if (isPaid(studentId)) {
-      setPayments(prev => prev.filter(p => !(p.studentId === studentId && p.month === selectedMonth && p.year === selectedYear)));
-      addToast('Đã huỷ xác nhận đóng tiền');
-    } else {
-      setPayments(prev => [...prev, {
-        studentId,
-        month: selectedMonth,
-        year: selectedYear,
-        paidAt: new Date().toISOString().split('T')[0],
-      }]);
-      addToast('✓ Đã xác nhận đóng tiền!');
-    }
+    try {
+      const result = await api.post('/payments/toggle', { studentId, month: selectedMonth, year: selectedYear });
+      addToast(result.action === 'added' ? '✓ Đã xác nhận đóng tiền!' : 'Đã huỷ xác nhận đóng tiền');
+      refetch();
+    } catch (err) { addToast('Lỗi: ' + err.message, 'error'); }
   };
 
-  const markAllPaid = () => {
+  const markAllPaid = async () => {
     const unpaid = filtered.filter(s => !isPaid(s.id));
     if (unpaid.length === 0) return;
-    const newPayments = unpaid.map(s => ({
-      studentId: s.id,
-      month: selectedMonth,
-      year: selectedYear,
-      paidAt: new Date().toISOString().split('T')[0],
-    }));
-    setPayments(prev => [...prev, ...newPayments]);
-    addToast(`✓ Đã xác nhận ${unpaid.length} học sinh đóng tiền!`);
+    try {
+      for (const s of unpaid) {
+        await api.post('/payments/toggle', { studentId: s.id, month: selectedMonth, year: selectedYear });
+      }
+      addToast(`✓ Đã xác nhận ${unpaid.length} học sinh đóng tiền!`);
+      refetch();
+    } catch (err) { addToast('Lỗi: ' + err.message, 'error'); }
   };
 
   // Count overdue consecutive months from current month backwards

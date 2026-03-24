@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useApi } from '../hooks/useApi';
+import api from '../utils/api';
 import { useToast } from '../components/Toast';
-import { CLASS_LEVELS, getLevelInfo, getPaymentInfo, generateId } from '../utils/data';
+import { CLASS_LEVELS, getLevelInfo, getPaymentInfo } from '../utils/data';
 import { HiOutlinePlus, HiOutlineTrash, HiOutlineUserGroup, HiOutlineSearch } from 'react-icons/hi';
 
 export default function Enrollment() {
-  const [students] = useLocalStorage('students', []);
-  const [classes] = useLocalStorage('classes', []);
-  const [enrollments, setEnrollments] = useLocalStorage('enrollments', []);
+  const [students] = useApi('/students');
+  const [classes] = useApi('/classes');
+  const [enrollments, setEnrollments, { refetch }] = useApi('/enrollments');
   const [selectedClass, setSelectedClass] = useState('');
   const [modal, setModal] = useState(false);
   const [search, setSearch] = useState('');
@@ -23,23 +24,30 @@ export default function Enrollment() {
     return notEnrolled && matchSearch && s.status === 'active';
   });
 
-  const handleEnroll = (studentId) => {
+  const handleEnroll = async (studentId) => {
     if (selectedClassObj && enrolledStudentIds.length >= selectedClassObj.capacity) {
       addToast('Lớp đã đầy!', 'error');
       return;
     }
-    setEnrollments(prev => [...prev, {
-      id: generateId(),
-      classId: selectedClass,
-      studentId,
-      enrolledAt: new Date().toISOString().split('T')[0],
-    }]);
-    addToast('Ghi danh thành công!');
+    try {
+      await api.post('/enrollments', {
+        classId: selectedClass,
+        studentId,
+        enrolledAt: new Date().toISOString().split('T')[0],
+      });
+      addToast('Ghi danh thành công!');
+      refetch();
+    } catch (err) { addToast('Lỗi: ' + err.message, 'error'); }
   };
 
-  const handleUnenroll = (studentId) => {
-    setEnrollments(prev => prev.filter(e => !(e.classId === selectedClass && e.studentId === studentId)));
-    addToast('Đã huỷ ghi danh', 'info');
+  const handleUnenroll = async (studentId) => {
+    const enrollment = enrollments.find(e => e.classId === selectedClass && e.studentId === studentId);
+    if (!enrollment) return;
+    try {
+      await api.delete(`/enrollments/${enrollment.id}`);
+      addToast('Đã huỷ ghi danh', 'info');
+      refetch();
+    } catch (err) { addToast('Lỗi: ' + err.message, 'error'); }
   };
 
   return (

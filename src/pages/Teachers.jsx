@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useApi } from '../hooks/useApi';
+import api from '../utils/api';
 import { useToast } from '../components/Toast';
-import { generateId } from '../utils/data';
 import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlinePhone } from 'react-icons/hi';
 
 const COLORS = ['#4f8cff', '#a855f7', '#ec4899', '#22c55e', '#f97316', '#06b6d4'];
 
 export default function Teachers() {
-  const [teachers, setTeachers] = useLocalStorage('teachers', []);
-  const [classes] = useLocalStorage('classes', []);
+  const [teachers, setTeachers, { refetch }] = useApi('/teachers');
+  const [classes] = useApi('/classes');
   const [modal, setModal] = useState(null);
   const [editingTeacher, setEditingTeacher] = useState(null);
   const addToast = useToast();
@@ -31,22 +31,28 @@ export default function Teachers() {
     setModal('delete');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim()) return;
-    if (modal === 'add') {
-      setTeachers(prev => [...prev, { ...form, id: generateId() }]);
-      addToast('Thêm giáo viên thành công!');
-    } else {
-      setTeachers(prev => prev.map(t => t.id === editingTeacher.id ? { ...form, id: editingTeacher.id } : t));
-      addToast('Cập nhật giáo viên thành công!');
-    }
-    setModal(null);
+    try {
+      if (modal === 'add') {
+        await api.post('/teachers', form);
+        addToast('Thêm giáo viên thành công!');
+      } else {
+        await api.put(`/teachers/${editingTeacher.id}`, form);
+        addToast('Cập nhật giáo viên thành công!');
+      }
+      setModal(null);
+      refetch();
+    } catch (err) { addToast('Lỗi: ' + err.message, 'error'); }
   };
 
-  const handleDelete = () => {
-    setTeachers(prev => prev.filter(t => t.id !== editingTeacher.id));
-    addToast('Đã xoá giáo viên!', 'info');
-    setModal(null);
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/teachers/${editingTeacher.id}`);
+      addToast('Đã xoá giáo viên!', 'info');
+      setModal(null);
+      refetch();
+    } catch (err) { addToast('Lỗi: ' + err.message, 'error'); }
   };
 
   const getAssignedClasses = (teacherId) => classes.filter(c => c.teacherId === teacherId);

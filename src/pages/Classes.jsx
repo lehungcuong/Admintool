@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useApi } from '../hooks/useApi';
+import api from '../utils/api';
 import { useToast } from '../components/Toast';
-import { CLASS_LEVELS, getLevelInfo, generateId } from '../utils/data';
+import { CLASS_LEVELS, getLevelInfo } from '../utils/data';
 import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineUserGroup } from 'react-icons/hi';
 
 export default function Classes() {
-  const [classes, setClasses] = useLocalStorage('classes', []);
-  const [teachers] = useLocalStorage('teachers', []);
-  const [enrollments] = useLocalStorage('enrollments', []);
+  const [classes, setClasses, { refetch }] = useApi('/classes');
+  const [teachers] = useApi('/teachers');
+  const [enrollments] = useApi('/enrollments');
   const [activeLevel, setActiveLevel] = useState('all');
   const [modal, setModal] = useState(null);
   const [editingClass, setEditingClass] = useState(null);
@@ -33,22 +34,28 @@ export default function Classes() {
     setModal('delete');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim()) return;
-    if (modal === 'add') {
-      setClasses(prev => [...prev, { ...form, id: generateId() }]);
-      addToast('Thêm lớp học thành công!');
-    } else {
-      setClasses(prev => prev.map(c => c.id === editingClass.id ? { ...form, id: editingClass.id } : c));
-      addToast('Cập nhật lớp học thành công!');
-    }
-    setModal(null);
+    try {
+      if (modal === 'add') {
+        await api.post('/classes', form);
+        addToast('Thêm lớp học thành công!');
+      } else {
+        await api.put(`/classes/${editingClass.id}`, form);
+        addToast('Cập nhật lớp học thành công!');
+      }
+      setModal(null);
+      refetch();
+    } catch (err) { addToast('Lỗi: ' + err.message, 'error'); }
   };
 
-  const handleDelete = () => {
-    setClasses(prev => prev.filter(c => c.id !== editingClass.id));
-    addToast('Đã xoá lớp học!', 'info');
-    setModal(null);
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/classes/${editingClass.id}`);
+      addToast('Đã xoá lớp học!', 'info');
+      setModal(null);
+      refetch();
+    } catch (err) { addToast('Lỗi: ' + err.message, 'error'); }
   };
 
   const getTeacherName = (id) => {

@@ -1,36 +1,35 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { STAFF_USERS, getAllUsers, ROLE_PERMISSIONS, ROLE_LABELS, ROLES } from '../utils/roles';
+import { createContext, useContext, useState } from 'react';
+import api from '../utils/api';
+import { ROLE_PERMISSIONS, ROLE_LABELS, ROLES } from '../utils/roles';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('auth_user');
-      return saved ? JSON.parse(saved) : null;
+      const saved = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      return (saved && token) ? JSON.parse(saved) : null;
     } catch {
       return null;
     }
   });
 
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('auth_user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('auth_user');
+  const login = async (username, password) => {
+    try {
+      const { token, user: userData } = await api.login(username, password);
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
     }
-  }, [user]);
-
-  const login = (username, password) => {
-    const found = getAllUsers().find(u => u.username === username && u.password === password);
-    if (!found) return { success: false, error: 'Sai tên đăng nhập hoặc mật khẩu' };
-    
-    const { password: _, ...safeUser } = found;
-    setUser(safeUser);
-    return { success: true };
   };
 
   const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
   };
 

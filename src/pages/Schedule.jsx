@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useApi } from '../hooks/useApi';
+import api from '../utils/api';
 import { useToast } from '../components/Toast';
-import { DAYS, TIME_SLOTS, CLASS_LEVELS, generateId } from '../utils/data';
+import { DAYS, TIME_SLOTS, CLASS_LEVELS } from '../utils/data';
 import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash } from 'react-icons/hi';
 
 export default function Schedule() {
-  const [scheduleData, setScheduleData] = useLocalStorage('schedule', []);
+  const [scheduleData, setScheduleData, { refetch }] = useApi('/schedules');
   const [filterLevel, setFilterLevel] = useState('all');
   const [modal, setModal] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
@@ -35,22 +36,28 @@ export default function Schedule() {
     setModal('delete');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.className.trim()) return;
-    if (modal === 'add') {
-      setScheduleData(prev => [...prev, { ...form, id: generateId(), classId: '' }]);
-      addToast('Thêm lịch học thành công!');
-    } else {
-      setScheduleData(prev => prev.map(s => s.id === editingItem.id ? { ...form, id: editingItem.id, classId: editingItem.classId || '' } : s));
-      addToast('Cập nhật lịch học thành công!');
-    }
-    setModal(null);
+    try {
+      if (modal === 'add') {
+        await api.post('/schedules', { ...form, classId: '' });
+        addToast('Thêm lịch học thành công!');
+      } else {
+        await api.put(`/schedules/${editingItem.id}`, { ...form, classId: editingItem.classId || '' });
+        addToast('Cập nhật lịch học thành công!');
+      }
+      setModal(null);
+      refetch();
+    } catch (err) { addToast('Lỗi: ' + err.message, 'error'); }
   };
 
-  const handleDelete = () => {
-    setScheduleData(prev => prev.filter(s => s.id !== editingItem.id));
-    addToast('Đã xoá lịch học!', 'info');
-    setModal(null);
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/schedules/${editingItem.id}`);
+      addToast('Đã xoá lịch học!', 'info');
+      setModal(null);
+      refetch();
+    } catch (err) { addToast('Lỗi: ' + err.message, 'error'); }
   };
 
   return (
