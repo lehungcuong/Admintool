@@ -110,7 +110,7 @@ export default function StudentTuition() {
         <header className="student-header">
           <div className="student-header-left">
             <div className="student-header-logo"><HiOutlineSparkles /></div>
-            <h2>Phúc Ngôn</h2>
+            <h2>Anh Ngữ Phúc Ngôn</h2>
           </div>
           <button className="logout-btn" onClick={logout}>
             <HiOutlineLogout /> Đăng xuất
@@ -133,7 +133,7 @@ export default function StudentTuition() {
       <header className="student-header">
         <div className="student-header-left">
           <div className="student-header-logo"><HiOutlineSparkles /></div>
-          <h2>Phúc Ngôn</h2>
+          <h2>Anh Ngữ Phúc Ngôn</h2>
         </div>
         <div className="student-header-right">
           <div className="student-user-info">

@@ -34,7 +34,7 @@ export default function Login() {
           <div className="login-logo-icon">
             <HiOutlineSparkles />
           </div>
-          <h1>Phúc Ngôn</h1>
+          <h1>Anh Ngữ Phúc Ngôn</h1>
           <p>Đăng nhập để tiếp tục</p>
         </div>
 
