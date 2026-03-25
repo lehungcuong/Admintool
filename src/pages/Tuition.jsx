@@ -22,6 +22,7 @@ export default function Tuition() {
   const [extraFees, , { refetch: refetchFees }] = useApi('/extra-fees');
   const [extraFeePayments, , { refetch: refetchEfp }] = useApi('/extra-fee-payments');
   const [classes] = useApi('/classes');
+  const [enrollments] = useApi('/enrollments');
   const [filterLevel, setFilterLevel] = useState('all');
   const [search, setSearch] = useState('');
   const addToast = useToast();
@@ -120,10 +121,25 @@ export default function Tuition() {
   };
 
   const getOverdueMonths = (studentId) => {
+    // Find earliest enrollment date for this student
+    const studentEnrollments = enrollments.filter(e => e.studentId === studentId);
+    let enrollMonth = 1, enrollYear = currentYear;
+    if (studentEnrollments.length > 0) {
+      // Use earliest createdAt or enrolledAt
+      const earliest = studentEnrollments.reduce((min, e) => {
+        const d = new Date(e.enrolledAt || e.createdAt);
+        return d < min ? d : min;
+      }, new Date(studentEnrollments[0].enrolledAt || studentEnrollments[0].createdAt));
+      enrollMonth = earliest.getMonth() + 1;
+      enrollYear = earliest.getFullYear();
+    }
+
     let count = 0;
     let y = currentYear;
     let m = currentMonth;
     for (let i = 0; i < 12; i++) {
+      // Don't count months before enrollment
+      if (y < enrollYear || (y === enrollYear && m < enrollMonth)) break;
       const paid = payments.some(p => p.studentId === studentId && p.month === m && p.year === y);
       if (paid) break;
       count++;
