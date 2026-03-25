@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
 // POST toggle payment (add or remove)
 router.post('/toggle', async (req, res) => {
   try {
-    const { studentId, month, year } = req.body;
+    const { studentId, month, year, amount, expectedAmount, note } = req.body;
     const existing = await Payment.findOne({ studentId, month, year });
 
     if (existing) {
@@ -32,6 +32,9 @@ router.post('/toggle', async (req, res) => {
     } else {
       const payment = await Payment.create({
         studentId, month, year,
+        amount: amount || expectedAmount || 500000,
+        expectedAmount: expectedAmount || 500000,
+        note: note || '',
         paidAt: new Date().toISOString().split('T')[0],
       });
       const obj = payment.toObject();
@@ -40,6 +43,26 @@ router.post('/toggle', async (req, res) => {
       delete obj.__v;
       res.json({ action: 'added', payment: obj });
     }
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// PUT update payment (for partial payment adjustment)
+router.put('/:id', async (req, res) => {
+  try {
+    const { amount, expectedAmount, note } = req.body;
+    const payment = await Payment.findByIdAndUpdate(
+      req.params.id,
+      { amount, expectedAmount, note },
+      { new: true }
+    );
+    if (!payment) return res.status(404).json({ error: 'Not found' });
+    const obj = payment.toObject();
+    obj.id = obj._id.toString();
+    delete obj._id;
+    delete obj.__v;
+    res.json(obj);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

@@ -15,6 +15,8 @@ import Teacher from './models/Teacher.js';
 import Class from './models/Class.js';
 import Enrollment from './models/Enrollment.js';
 import Schedule from './models/Schedule.js';
+import ExtraFee from './models/ExtraFee.js';
+import ExtraFeePayment from './models/ExtraFeePayment.js';
 
 import User from './models/User.js';
 import Payment from './models/Payment.js';
@@ -71,6 +73,7 @@ app.post('/api/webhook/sepay', async (req, res) => {
       studentId: userAccount.studentId.toString(),
       month, year,
       amount: transferAmount,
+      expectedAmount: transferAmount,
       paidAt: transactionDate || new Date().toISOString().split('T')[0],
       referenceCode, gateway,
       paymentMethod: 'bank_transfer',
@@ -101,6 +104,47 @@ app.use('/api/classes', auth, createCrudRoutes(Class));
 app.use('/api/payments', auth, paymentsRoutes);
 app.use('/api/enrollments', auth, createCrudRoutes(Enrollment));
 app.use('/api/schedules', auth, createCrudRoutes(Schedule));
+app.use('/api/extra-fees', auth, createCrudRoutes(ExtraFee));
+app.use('/api/extra-fee-payments', auth, createCrudRoutes(ExtraFeePayment));
+
+// Extra fee: bulk create payments for all active students
+app.post('/api/extra-fees/:feeId/charge-all', auth, async (req, res) => {
+  try {
+    const fee = await ExtraFee.findById(req.params.feeId);
+    if (!fee) return res.status(404).json({ error: 'Fee not found' });
+    const Student = (await import('./models/Student.js')).default;
+    const students = await Student.find({ status: 'active' });
+    const ops = students.map(s => ({
+      updateOne: {
+        filter: { feeId: fee._id.toString(), studentId: s._id.toString() },
+        update: { $setOnInsert: { feeId: fee._id.toString(), studentId: s._id.toString(), amount: fee.amount, paid: false } },
+        upsert: true,
+      }
+    }));
+    if (ops.length) await ExtraFeePayment.bulkWrite(ops);
+    res.json({ success: true, count: students.length });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Toggle extra fee payment for a student
+app.post('/api/extra-fee-payments/toggle', auth, async (req, res) => {
+  try {
+    const { feeId, studentId } = req.body;
+    let rec = await ExtraFeePayment.findOne({ feeId, studentId });
+    if (!rec) {
+      const fee = await ExtraFee.findById(feeId);
+      rec = await ExtraFeePayment.create({ feeId, studentId, amount: fee?.amount || 0, paid: true });
+      return res.json({ action: 'added', item: rec });
+    }
+    rec.paid = !rec.paid;
+    await rec.save();
+    res.json({ action: rec.paid ? 'paid' : 'unpaid', item: rec });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 // Connect to MongoDB and start server
 const PORT = process.env.PORT || 5000;

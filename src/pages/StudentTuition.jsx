@@ -9,7 +9,7 @@ import {
   HiOutlineExclamation, HiOutlineCash, HiOutlinePhone,
   HiOutlineAcademicCap, HiOutlineCalendar, HiOutlineQrcode,
   HiOutlineClipboard, HiOutlineRefresh, HiOutlineClock,
-  HiOutlineBookOpen, HiOutlineLocationMarker,
+  HiOutlineBookOpen, HiOutlineLocationMarker, HiOutlineCollection,
 } from 'react-icons/hi';
 import './StudentTuition.css';
 
@@ -29,6 +29,8 @@ export default function StudentTuition() {
   const [enrollments] = useApi('/enrollments');
   const [schedules] = useApi('/schedules');
   const [teachers] = useApi('/teachers');
+  const [extraFees] = useApi('/extra-fees');
+  const [extraFeePayments] = useApi('/extra-fee-payments');
   const [paymentConfig, setPaymentConfig] = useState(null);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('tuition'); // 'tuition' | 'schedule'
@@ -104,9 +106,7 @@ export default function StudentTuition() {
     ? `https://qr.sepay.vn/img?acc=${paymentConfig.bankAccount}&bank=${paymentConfig.bankName}&amount=${tuitionAmount}&des=${encodeURIComponent(paymentCode)}`
     : '';
 
-  const formatMoney = (amount) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-  };
+
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
@@ -135,6 +135,17 @@ export default function StudentTuition() {
       return (a.time || '').localeCompare(b.time || '');
     });
   }, [schedules, myClasses]);
+
+  // Extra fees for this student
+  const myExtraFees = useMemo(() => {
+    if (!student) return [];
+    return extraFees.map(fee => {
+      const payment = extraFeePayments.find(p => p.feeId === fee.id && p.studentId === student.id);
+      return { ...fee, paid: payment?.paid || false };
+    });
+  }, [extraFees, extraFeePayments, student]);
+
+  const formatMoney = (v) => new Intl.NumberFormat('vi-VN').format(v) + 'đ';
 
   const getTeacherName = (teacherId) => {
     const t = teachers.find(t => t.id === teacherId);
@@ -340,6 +351,35 @@ export default function StudentTuition() {
               <div className="qr-payment-card">
                 <h3 style={{ color: '#22c55e' }}><HiOutlineCheck /> Đã đóng đủ học phí!</h3>
                 <p className="subtitle">Bạn đã đóng đầy đủ học phí. Cảm ơn bạn!</p>
+              </div>
+            )}
+
+            {/* Extra Fees */}
+            {myExtraFees.length > 0 && (
+              <div className="schedule-section" style={{ marginTop: 8 }}>
+                <h3><HiOutlineCollection /> Phí phát sinh</h3>
+                <div className="schedule-grid">
+                  {myExtraFees.map(fee => (
+                    <div key={fee.id} className="schedule-item" style={{
+                      borderLeft: `4px solid ${fee.paid ? '#22c55e' : '#ef4444'}`,
+                    }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>{fee.name}</div>
+                        {fee.description && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>{fee.description}</div>}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontWeight: 700, color: 'var(--accent-blue)', fontSize: '0.9rem' }}>{formatMoney(fee.amount)}</span>
+                        <span style={{
+                          padding: '4px 10px', borderRadius: 8, fontSize: '0.72rem', fontWeight: 700,
+                          background: fee.paid ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+                          color: fee.paid ? '#22c55e' : '#ef4444',
+                        }}>
+                          {fee.paid ? '✓ Đã đóng' : '✕ Chưa đóng'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </>

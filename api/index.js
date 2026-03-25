@@ -37,7 +37,11 @@ const Class = mongoose.models.Class || mongoose.model('Class', classSchema);
 
 const paymentSchema = new mongoose.Schema({
   studentId: { type: String, required: true },
-  month: Number, year: Number, amount: Number, paidAt: String,
+  month: Number, year: Number,
+  amount: { type: Number, default: 0 },
+  expectedAmount: { type: Number, default: 500000 },
+  note: { type: String, default: '' },
+  paidAt: String,
   referenceCode: String, gateway: String, paymentMethod: { type: String, default: 'manual' },
 }, { timestamps: true });
 const Payment = mongoose.models.Payment || mongoose.model('Payment', paymentSchema);
@@ -53,6 +57,21 @@ const scheduleSchema = new mongoose.Schema({
   className: String, level: String, day: String, time: String, room: String, classId: String,
 }, { timestamps: true });
 const Schedule = mongoose.models.Schedule || mongoose.model('Schedule', scheduleSchema);
+
+const extraFeeSchema = new mongoose.Schema({
+  name: { type: String, required: true, trim: true },
+  amount: { type: Number, required: true },
+  description: { type: String, default: '' },
+}, { timestamps: true });
+const ExtraFee = mongoose.models.ExtraFee || mongoose.model('ExtraFee', extraFeeSchema);
+
+const extraFeePaymentSchema = new mongoose.Schema({
+  feeId: { type: String, required: true },
+  studentId: { type: String, required: true },
+  amount: { type: Number, default: 0 },
+  paid: { type: Boolean, default: false },
+}, { timestamps: true });
+const ExtraFeePayment = mongoose.models.ExtraFeePayment || mongoose.model('ExtraFeePayment', extraFeePaymentSchema);
 
 // ========== HELPERS ==========
 function toObj(doc) {
@@ -161,12 +180,20 @@ const paymentsRouter = express.Router();
 paymentsRouter.get('/', async (_, res) => { try { res.json((await Payment.find().sort({ createdAt: -1 })).map(toObj)); } catch (e) { res.status(500).json({ error: e.message }); } });
 paymentsRouter.post('/toggle', async (req, res) => {
   try {
-    const { studentId, month, year } = req.body;
+    const { studentId, month, year, amount, expectedAmount, note } = req.body;
     const existing = await Payment.findOne({ studentId, month, year });
     if (existing) { await Payment.deleteOne({ _id: existing._id }); return res.json({ action: 'removed' }); }
-    await Payment.create({ studentId, month, year, paidAt: new Date().toISOString().split('T')[0] });
-    res.json({ action: 'added' });
+    const p = await Payment.create({ studentId, month, year, amount: amount || expectedAmount || 500000, expectedAmount: expectedAmount || 500000, note: note || '', paidAt: new Date().toISOString().split('T')[0] });
+    res.json({ action: 'added', payment: toObj(p) });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+paymentsRouter.put('/:id', async (req, res) => {
+  try {
+    const { amount, expectedAmount, note } = req.body;
+    const p = await Payment.findByIdAndUpdate(req.params.id, { amount, expectedAmount, note }, { new: true });
+    if (!p) return res.status(404).json({ error: 'Not found' });
+    res.json(toObj(p));
+  } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
 // SePay Webhook (PUBLIC — no auth, verified by API key)
@@ -244,6 +271,42 @@ app.use('/api/classes', auth, crudRoutes(Class));
 app.use('/api/payments', auth, paymentsRouter);
 app.use('/api/enrollments', auth, crudRoutes(Enrollment));
 app.use('/api/schedules', auth, crudRoutes(Schedule));
+app.use('/api/extra-fees', auth, crudRoutes(ExtraFee));
+app.use('/api/extra-fee-payments', auth, crudRoutes(ExtraFeePayment));
+
+// Extra fee: bulk charge all active students
+app.post('/api/extra-fees/:feeId/charge-all', auth, async (req, res) => {
+  try {
+    const fee = await ExtraFee.findById(req.params.feeId);
+    if (!fee) return res.status(404).json({ error: 'Fee not found' });
+    const students = await Student.find({ status: 'active' });
+    const ops = students.map(s => ({
+      updateOne: {
+        filter: { feeId: fee._id.toString(), studentId: s._id.toString() },
+        update: { $setOnInsert: { feeId: fee._id.toString(), studentId: s._id.toString(), amount: fee.amount, paid: false } },
+        upsert: true,
+      }
+    }));
+    if (ops.length) await ExtraFeePayment.bulkWrite(ops);
+    res.json({ success: true, count: students.length });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Toggle extra fee payment for a student
+app.post('/api/extra-fee-payments/toggle', auth, async (req, res) => {
+  try {
+    const { feeId, studentId } = req.body;
+    let rec = await ExtraFeePayment.findOne({ feeId, studentId });
+    if (!rec) {
+      const fee = await ExtraFee.findById(feeId);
+      rec = await ExtraFeePayment.create({ feeId, studentId, amount: fee?.amount || 0, paid: true });
+      return res.json({ action: 'added', item: rec });
+    }
+    rec.paid = !rec.paid;
+    await rec.save();
+    res.json({ action: rec.paid ? 'paid' : 'unpaid', item: rec });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 // ========== DB CONNECTION (cached for serverless) ==========
 let isConnected = false;
