@@ -358,88 +358,112 @@ export default function StudentTuition() {
 
             {/* Extra Fees */}
             {myExtraFees.length > 0 && (
-              <div className="schedule-section" style={{ marginTop: 8 }}>
+              <div className="schedule-section" style={{ marginTop: 16 }}>
                 <h3><HiOutlineCollection /> Phí phát sinh</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {myExtraFees.map(fee => {
-                    const feePayCode = user?.username ? `EH ${user.username} PHI ${fee.name.replace(/\s+/g, '')}`.toUpperCase() : '';
+                    // Short code: EH <username> PHI <fee id last 6>
+                    const shortId = fee.id.slice(-6).toUpperCase();
+                    const feePayCode = user?.username ? `EH ${user.username.toUpperCase()} PHI${shortId}` : '';
                     const feeQrUrl = paymentConfig && !fee.paid
                       ? `https://qr.sepay.vn/img?acc=${paymentConfig.bankAccount}&bank=${paymentConfig.bankName}&amount=${fee.amount}&des=${encodeURIComponent(feePayCode)}`
                       : '';
 
-                    return (
-                      <div key={fee.id} style={{
-                        background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-                        borderRadius: 'var(--radius-md)', overflow: 'hidden',
-                        borderLeft: `4px solid ${fee.paid ? '#22c55e' : '#ef4444'}`,
-                      }}>
-                        {/* Fee Header */}
-                        <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{fee.name}</div>
-                            {fee.description && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>{fee.description}</div>}
-                          </div>
+                    if (fee.paid) {
+                      // Compact paid card
+                      return (
+                        <div key={fee.id} style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          background: 'var(--bg-card)', border: '1px solid var(--border-color)',
+                          borderRadius: 'var(--radius-md)', padding: '14px 18px',
+                          borderLeft: '4px solid #22c55e',
+                        }}>
+                          <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--text-primary)' }}>{fee.name}</div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span style={{ fontWeight: 700, color: 'var(--accent-blue)', fontSize: '0.95rem' }}>{formatMoney(fee.amount)}</span>
-                            <span style={{
-                              padding: '4px 10px', borderRadius: 8, fontSize: '0.72rem', fontWeight: 700,
-                              background: fee.paid ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-                              color: fee.paid ? '#22c55e' : '#ef4444',
-                            }}>
-                              {fee.paid ? '✓ Đã đóng' : '✕ Chưa đóng'}
+                            <span style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.85rem' }}>{formatMoney(fee.amount)}</span>
+                            <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: 'rgba(34,197,94,0.12)', color: '#22c55e' }}>
+                              ✓ Đã đóng
                             </span>
                           </div>
                         </div>
+                      );
+                    }
 
-                        {/* QR Payment for unpaid fees */}
-                        {!fee.paid && paymentConfig && (
-                          <div style={{
-                            padding: '16px 18px', borderTop: '1px solid var(--border-color)',
-                            background: 'rgba(79,140,255,0.03)',
-                          }}>
-                            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                              {/* QR Code */}
-                              <div style={{ textAlign: 'center' }}>
-                                <img
-                                  src={feeQrUrl}
-                                  alt="QR Code"
-                                  style={{ width: 160, height: 160, borderRadius: 8, background: '#fff', padding: 4 }}
-                                />
-                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 6 }}>Quét mã để thanh toán</div>
-                              </div>
+                    // Unpaid card with QR
+                    return (
+                      <div key={fee.id} className="qr-payment-card" style={{ padding: 0, overflow: 'hidden' }}>
+                        {/* Header */}
+                        <div style={{
+                          padding: '16px 20px',
+                          background: 'linear-gradient(135deg, rgba(239,68,68,0.06), rgba(245,158,11,0.04))',
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          borderBottom: '1px solid var(--border-color)',
+                        }}>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{fee.name}</div>
+                            {fee.description && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 3 }}>{fee.description}</div>}
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#ef4444' }}>{formatMoney(fee.amount)}</div>
+                            <div style={{ fontSize: '0.7rem', color: '#ef4444', marginTop: 2 }}>Chưa đóng</div>
+                          </div>
+                        </div>
 
-                              {/* Bank Info */}
-                              <div style={{ flex: 1, minWidth: 200 }}>
-                                <div className="bank-info" style={{ margin: 0 }}>
-                                  <div className="bank-info-row">
-                                    <span className="label">🏦 Ngân hàng</span>
-                                    <span className="value">{paymentConfig.bankName}</span>
-                                  </div>
-                                  <div className="bank-info-row">
-                                    <span className="label">📋 Số TK</span>
-                                    <span className="value">{paymentConfig.bankAccount}</span>
-                                  </div>
-                                  <div className="bank-info-row">
-                                    <span className="label">👤 Chủ TK</span>
-                                    <span className="value">{paymentConfig.beneficiary}</span>
-                                  </div>
-                                  <div className="bank-info-row highlight">
-                                    <span className="label">💰 Số tiền</span>
-                                    <span className="value amount-highlight">{formatMoney(fee.amount)}</span>
-                                  </div>
-                                  <div className="bank-info-row">
-                                    <span className="label">📝 Nội dung CK</span>
-                                    <span className="value" style={{ fontWeight: 700, color: 'var(--accent-blue)', fontSize: '0.82rem' }}>{feePayCode}</span>
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => { navigator.clipboard.writeText(feePayCode); addToast('Đã copy nội dung CK!'); }}
-                                  className="btn btn-secondary"
-                                  style={{ marginTop: 8, fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: 4 }}
-                                >
-                                  <HiOutlineClipboard /> Copy nội dung CK
-                                </button>
+                        {/* QR + Info — centered vertical */}
+                        {paymentConfig && (
+                          <div style={{ padding: '20px', textAlign: 'center' }}>
+                            {/* QR */}
+                            <img
+                              src={feeQrUrl}
+                              alt="QR"
+                              style={{ width: 180, height: 180, borderRadius: 12, background: '#fff', padding: 6, boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }}
+                            />
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 8, marginBottom: 16 }}>
+                              Quét mã QR để thanh toán
+                            </div>
+
+                            {/* Compact bank info */}
+                            <div style={{
+                              display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px',
+                              background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: '12px 16px',
+                              border: '1px solid var(--border-color)', textAlign: 'left',
+                              maxWidth: 360, margin: '0 auto',
+                            }}>
+                              <div>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 2 }}>Ngân hàng</div>
+                                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>{paymentConfig.bankName}</div>
                               </div>
+                              <div>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 2 }}>Số tài khoản</div>
+                                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>{paymentConfig.bankAccount}</div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 2 }}>Chủ TK</div>
+                                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>{paymentConfig.beneficiary}</div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginBottom: 2 }}>Số tiền</div>
+                                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#ef4444' }}>{formatMoney(fee.amount)}</div>
+                              </div>
+                            </div>
+
+                            {/* Transfer code */}
+                            <div style={{
+                              marginTop: 12, padding: '10px 16px', borderRadius: 8,
+                              background: 'rgba(79,140,255,0.08)', border: '1px dashed rgba(79,140,255,0.25)',
+                              display: 'inline-flex', alignItems: 'center', gap: 8,
+                            }}>
+                              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Nội dung CK:</span>
+                              <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--accent-blue)', letterSpacing: 1 }}>{feePayCode}</span>
+                            </div>
+                            <div style={{ marginTop: 10 }}>
+                              <button
+                                onClick={() => { navigator.clipboard.writeText(feePayCode); addToast('Đã copy nội dung CK!'); }}
+                                className="btn btn-secondary"
+                                style={{ fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                              >
+                                <HiOutlineClipboard /> Copy nội dung
+                              </button>
                             </div>
                           </div>
                         )}
