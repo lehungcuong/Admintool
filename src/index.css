@@ -442,6 +442,20 @@ tr:hover td {
   color: var(--text-muted);
 }
 
+.form-input.input-error,
+.form-select.input-error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.error-text {
+  display: block;
+  color: #ef4444;
+  font-size: 0.72rem;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
 .form-select option {
   background: var(--bg-secondary);
   color: var(--text-primary);

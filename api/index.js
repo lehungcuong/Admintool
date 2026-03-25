@@ -18,6 +18,8 @@ const User = mongoose.models.User || mongoose.model('User', userSchema);
 const studentSchema = new mongoose.Schema({
   name: { type: String, required: true },
   phone: String, dob: String, level: String, status: { type: String, default: 'active' },
+  enrolledAt: { type: Date, default: Date.now },
+  tuitionAmount: { type: Number, default: 500000 },
 }, { timestamps: true });
 const Student = mongoose.models.Student || mongoose.model('Student', studentSchema);
 

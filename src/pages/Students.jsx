@@ -30,7 +30,7 @@ const STATUS_MAP = {
 
 export default function Students() {
   const [students, setStudents, { refetch }] = useApi('/students');
-  const [payments] = useApi('/payments');
+  const [payments, , { refetch: refetchPayments }] = useApi('/payments');
   const [search, setSearch] = useState('');
   const [filterLevel, setFilterLevel] = useState('all');
   const [modal, setModal] = useState(null);
@@ -39,6 +39,7 @@ export default function Students() {
   const fileInputRef = useRef(null);
   const addToast = useToast();
   const [createdAccount, setCreatedAccount] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
@@ -51,12 +52,40 @@ export default function Students() {
     try {
       await api.post('/payments/toggle', { studentId, month: currentMonth, year: currentYear });
       refetch();
+      refetchPayments();
     } catch (err) {
       addToast('Lỗi cập nhật thanh toán: ' + err.message, 'error');
     }
   };
 
-  const [form, setForm] = useState({ name: '', phone: '', dob: '', level: 'prestarter', status: 'active' });
+  // Validation helpers
+  const validatePhone = (phone) => {
+    if (!phone) return null; // optional
+    if (!/^0\d{9}$/.test(phone)) return 'SĐT phải có 10 số, bắt đầu bằng 0';
+    return null;
+  };
+
+  const validateDob = (dob) => {
+    if (!dob) return null; // optional
+    const d = new Date(dob);
+    if (isNaN(d.getTime())) return 'Ngày sinh không hợp lệ';
+    const age = (Date.now() - d.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+    if (age < 3 || age > 25) return 'Tuổi phải từ 3 đến 25';
+    return null;
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!form.name.trim()) errors.name = 'Vui lòng nhập tên';
+    const phoneErr = validatePhone(form.phone);
+    if (phoneErr) errors.phone = phoneErr;
+    const dobErr = validateDob(form.dob);
+    if (dobErr) errors.dob = dobErr;
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const [form, setForm] = useState({ name: '', phone: '', dob: '', level: 'prestarter', status: 'active', tuitionAmount: 500000 });
 
   const filtered = students.filter(s => {
     const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || (s.phone || '').includes(search);
@@ -65,13 +94,15 @@ export default function Students() {
   });
 
   const openAdd = () => {
-    setForm({ name: '', phone: '', dob: '', level: 'prestarter', status: 'active' });
+    setForm({ name: '', phone: '', dob: '', level: 'prestarter', status: 'active', tuitionAmount: 500000 });
+    setFormErrors({});
     setModal('add');
   };
 
   const openEdit = (student) => {
     setEditingStudent(student);
     setForm({ ...student });
+    setFormErrors({});
     setModal('edit');
   };
 
@@ -81,7 +112,7 @@ export default function Students() {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) return;
+    if (!validateForm()) return;
     try {
       if (modal === 'add') {
         const result = await api.post('/students', form);
@@ -289,24 +320,27 @@ export default function Students() {
 
       {/* Add/Edit Modal */}
       {(modal === 'add' || modal === 'edit') && (
-        <div className="modal-overlay" onClick={() => setModal(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setModal(null); }}>
+          <div className="modal-content">
             <div className="modal-header">
               <h2>{modal === 'add' ? 'Thêm học sinh mới' : 'Chỉnh sửa học sinh'}</h2>
               <button className="btn-icon" onClick={() => setModal(null)}>✕</button>
             </div>
             <div className="form-group">
               <label>Họ và tên *</label>
-              <input className="form-input" placeholder="Nguyễn Văn A" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+              <input className={`form-input${formErrors.name ? ' input-error' : ''}`} placeholder="Nguyễn Văn A" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+              {formErrors.name && <span className="error-text">{formErrors.name}</span>}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="form-group">
                 <label>Điện thoại</label>
-                <input className="form-input" placeholder="0912345678" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+                <input className={`form-input${formErrors.phone ? ' input-error' : ''}`} placeholder="0912345678" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value.replace(/[^0-9]/g, '').slice(0, 10) })} />
+                {formErrors.phone && <span className="error-text">{formErrors.phone}</span>}
               </div>
               <div className="form-group">
                 <label>Ngày sinh</label>
-                <input className="form-input" type="date" value={form.dob} onChange={e => setForm({ ...form, dob: e.target.value })} />
+                <input className={`form-input${formErrors.dob ? ' input-error' : ''}`} type="date" value={form.dob} onChange={e => setForm({ ...form, dob: e.target.value })} />
+                {formErrors.dob && <span className="error-text">{formErrors.dob}</span>}
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -326,6 +360,10 @@ export default function Students() {
                 </select>
               </div>
             </div>
+            <div className="form-group">
+              <label>Học phí / tháng (đ)</label>
+              <input className="form-input" type="number" min="0" step="50000" value={form.tuitionAmount || 500000} onChange={e => setForm({ ...form, tuitionAmount: Number(e.target.value) })} />
+            </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setModal(null)}>Huỷ</button>
               <button className="btn btn-primary" onClick={handleSave}>{modal === 'add' ? 'Thêm' : 'Cập nhật'}</button>
@@ -336,8 +374,8 @@ export default function Students() {
 
       {/* Delete Confirm Modal */}
       {modal === 'delete' && (
-        <div className="modal-overlay" onClick={() => setModal(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
+        <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setModal(null); }}>
+          <div className="modal-content" style={{ maxWidth: 400 }}>
             <div className="confirm-dialog">
               <h2 style={{ marginBottom: 16 }}>Xác nhận xoá</h2>
               <p>Bạn có chắc muốn xoá học sinh <strong>{editingStudent?.name}</strong>?</p>
@@ -353,8 +391,8 @@ export default function Students() {
 
       {/* Account Created Modal */}
       {modal === 'account-created' && createdAccount && (
-        <div className="modal-overlay" onClick={() => { setModal(null); setCreatedAccount(null); }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
+        <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) { setModal(null); setCreatedAccount(null); } }}>
+          <div className="modal-content" style={{ maxWidth: 420 }}>
             <div className="modal-header">
               <h2><HiOutlineKey /> Tài khoản đã tạo</h2>
               <button className="btn-icon" onClick={() => { setModal(null); setCreatedAccount(null); }}>✕</button>
@@ -410,8 +448,8 @@ export default function Students() {
 
       {/* Import Preview Modal */}
       {modal === 'import' && (
-        <div className="modal-overlay" onClick={() => { setModal(null); setImportData([]); }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 700 }}>
+        <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) { setModal(null); setImportData([]); } }}>
+          <div className="modal-content" style={{ maxWidth: 700 }}>
             <div className="modal-header">
               <h2>📥 Import học sinh từ Excel</h2>
               <button className="btn-icon" onClick={() => { setModal(null); setImportData([]); }}>✕</button>

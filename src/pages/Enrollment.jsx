@@ -179,8 +179,8 @@ export default function Enrollment() {
 
       {/* Add Student Modal */}
       {modal && (
-        <div className="modal-overlay" onClick={() => { setModal(false); setSearch(''); }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) { setModal(false); setSearch(''); } }}>
+          <div className="modal-content">
             <div className="modal-header">
               <h2>Thêm học sinh vào {selectedClassObj?.name}</h2>
               <button className="btn-icon" onClick={() => { setModal(false); setSearch(''); }}>✕</button>

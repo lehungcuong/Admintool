@@ -152,8 +152,8 @@ export default function Schedule() {
 
       {/* Add/Edit Modal */}
       {(modal === 'add' || modal === 'edit') && (
-        <div className="modal-overlay" onClick={() => setModal(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setModal(null); }}>
+          <div className="modal-content">
             <div className="modal-header">
               <h2>{modal === 'add' ? 'Thêm lịch học' : 'Chỉnh sửa lịch học'}</h2>
               <button className="btn-icon" onClick={() => setModal(null)}>✕</button>
@@ -204,8 +204,8 @@ export default function Schedule() {
 
       {/* Delete Confirm */}
       {modal === 'delete' && (
-        <div className="modal-overlay" onClick={() => setModal(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
+        <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setModal(null); }}>
+          <div className="modal-content" style={{ maxWidth: 400 }}>
             <div className="confirm-dialog">
               <h2 style={{ marginBottom: 16 }}>Xác nhận xoá</h2>
               <p>Bạn có chắc muốn xoá lịch <strong>{editingItem?.className}</strong> ({editingItem?.day} - {editingItem?.time})?</p>
