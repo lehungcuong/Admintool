@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { getLevelInfo } from '../utils/data';
 import api from '../utils/api';
+import { useToast } from '../components/Toast';
 
 import {
   HiOutlineSparkles, HiOutlineLogout, HiOutlineCheck,
@@ -23,6 +24,7 @@ const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 export default function StudentTuition() {
   const { user, logout, roleLabel } = useAuth();
+  const addToast = useToast();
   const [students] = useApi('/students');
   const [payments, , { refetch: refetchPayments }] = useApi('/payments');
   const [classes] = useApi('/classes');
@@ -358,27 +360,92 @@ export default function StudentTuition() {
             {myExtraFees.length > 0 && (
               <div className="schedule-section" style={{ marginTop: 8 }}>
                 <h3><HiOutlineCollection /> Phí phát sinh</h3>
-                <div className="schedule-grid">
-                  {myExtraFees.map(fee => (
-                    <div key={fee.id} className="schedule-item" style={{
-                      borderLeft: `4px solid ${fee.paid ? '#22c55e' : '#ef4444'}`,
-                    }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>{fee.name}</div>
-                        {fee.description && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>{fee.description}</div>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {myExtraFees.map(fee => {
+                    const feePayCode = user?.username ? `EH ${user.username} PHI ${fee.name.replace(/\s+/g, '')}`.toUpperCase() : '';
+                    const feeQrUrl = paymentConfig && !fee.paid
+                      ? `https://qr.sepay.vn/img?acc=${paymentConfig.bankAccount}&bank=${paymentConfig.bankName}&amount=${fee.amount}&des=${encodeURIComponent(feePayCode)}`
+                      : '';
+
+                    return (
+                      <div key={fee.id} style={{
+                        background: 'var(--bg-card)', border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-md)', overflow: 'hidden',
+                        borderLeft: `4px solid ${fee.paid ? '#22c55e' : '#ef4444'}`,
+                      }}>
+                        {/* Fee Header */}
+                        <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{fee.name}</div>
+                            {fee.description && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>{fee.description}</div>}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ fontWeight: 700, color: 'var(--accent-blue)', fontSize: '0.95rem' }}>{formatMoney(fee.amount)}</span>
+                            <span style={{
+                              padding: '4px 10px', borderRadius: 8, fontSize: '0.72rem', fontWeight: 700,
+                              background: fee.paid ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+                              color: fee.paid ? '#22c55e' : '#ef4444',
+                            }}>
+                              {fee.paid ? '✓ Đã đóng' : '✕ Chưa đóng'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* QR Payment for unpaid fees */}
+                        {!fee.paid && paymentConfig && (
+                          <div style={{
+                            padding: '16px 18px', borderTop: '1px solid var(--border-color)',
+                            background: 'rgba(79,140,255,0.03)',
+                          }}>
+                            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                              {/* QR Code */}
+                              <div style={{ textAlign: 'center' }}>
+                                <img
+                                  src={feeQrUrl}
+                                  alt="QR Code"
+                                  style={{ width: 160, height: 160, borderRadius: 8, background: '#fff', padding: 4 }}
+                                />
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 6 }}>Quét mã để thanh toán</div>
+                              </div>
+
+                              {/* Bank Info */}
+                              <div style={{ flex: 1, minWidth: 200 }}>
+                                <div className="bank-info" style={{ margin: 0 }}>
+                                  <div className="bank-info-row">
+                                    <span className="label">🏦 Ngân hàng</span>
+                                    <span className="value">{paymentConfig.bankName}</span>
+                                  </div>
+                                  <div className="bank-info-row">
+                                    <span className="label">📋 Số TK</span>
+                                    <span className="value">{paymentConfig.bankAccount}</span>
+                                  </div>
+                                  <div className="bank-info-row">
+                                    <span className="label">👤 Chủ TK</span>
+                                    <span className="value">{paymentConfig.beneficiary}</span>
+                                  </div>
+                                  <div className="bank-info-row highlight">
+                                    <span className="label">💰 Số tiền</span>
+                                    <span className="value amount-highlight">{formatMoney(fee.amount)}</span>
+                                  </div>
+                                  <div className="bank-info-row">
+                                    <span className="label">📝 Nội dung CK</span>
+                                    <span className="value" style={{ fontWeight: 700, color: 'var(--accent-blue)', fontSize: '0.82rem' }}>{feePayCode}</span>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => { navigator.clipboard.writeText(feePayCode); addToast('Đã copy nội dung CK!'); }}
+                                  className="btn btn-secondary"
+                                  style={{ marginTop: 8, fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: 4 }}
+                                >
+                                  <HiOutlineClipboard /> Copy nội dung CK
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{ fontWeight: 700, color: 'var(--accent-blue)', fontSize: '0.9rem' }}>{formatMoney(fee.amount)}</span>
-                        <span style={{
-                          padding: '4px 10px', borderRadius: 8, fontSize: '0.72rem', fontWeight: 700,
-                          background: fee.paid ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
-                          color: fee.paid ? '#22c55e' : '#ef4444',
-                        }}>
-                          {fee.paid ? '✓ Đã đóng' : '✕ Chưa đóng'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
