@@ -107,13 +107,26 @@ app.use('/api/schedules', auth, createCrudRoutes(Schedule));
 app.use('/api/extra-fees', auth, createCrudRoutes(ExtraFee));
 app.use('/api/extra-fee-payments', auth, createCrudRoutes(ExtraFeePayment));
 
-// Extra fee: bulk create payments for all active students
+// Extra fee: bulk create payments for targeted students
 app.post('/api/extra-fees/:feeId/charge-all', auth, async (req, res) => {
   try {
     const fee = await ExtraFee.findById(req.params.feeId);
     if (!fee) return res.status(404).json({ error: 'Fee not found' });
     const Student = (await import('./models/Student.js')).default;
-    const students = await Student.find({ status: 'active' });
+    let students = await Student.find({ status: 'active' });
+
+    // Filter by level
+    if (fee.appliesTo === 'level' && fee.targetLevel) {
+      students = students.filter(s => s.level === fee.targetLevel);
+    }
+
+    // Filter by class (via enrollments)
+    if (fee.appliesTo === 'class' && fee.targetClassId) {
+      const enrollments = await Enrollment.find({ classId: fee.targetClassId });
+      const enrolledIds = new Set(enrollments.map(e => e.studentId));
+      students = students.filter(s => enrolledIds.has(s._id.toString()));
+    }
+
     const ops = students.map(s => ({
       updateOne: {
         filter: { feeId: fee._id.toString(), studentId: s._id.toString() },

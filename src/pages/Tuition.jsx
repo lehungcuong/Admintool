@@ -21,6 +21,7 @@ export default function Tuition() {
   const [payments, setPayments, { refetch }] = useApi('/payments');
   const [extraFees, , { refetch: refetchFees }] = useApi('/extra-fees');
   const [extraFeePayments, , { refetch: refetchEfp }] = useApi('/extra-fee-payments');
+  const [classes] = useApi('/classes');
   const [filterLevel, setFilterLevel] = useState('all');
   const [search, setSearch] = useState('');
   const addToast = useToast();
@@ -41,7 +42,7 @@ export default function Tuition() {
 
   // Extra fee modal
   const [feeModal, setFeeModal] = useState(null); // 'add' | null
-  const [feeForm, setFeeForm] = useState({ name: '', amount: 50000, description: '' });
+  const [feeForm, setFeeForm] = useState({ name: '', amount: 50000, description: '', appliesTo: 'all', targetLevel: '', targetClassId: '' });
   const [selectedFee, setSelectedFee] = useState(null);
 
   const activeStudents = students.filter(s => s.status === 'active');
@@ -145,18 +146,21 @@ export default function Tuition() {
     else setSelectedMonth(m => m + 1);
   };
 
-  // === EXTRA FEE HELPERS ===
   const handleCreateFee = async () => {
     if (!feeForm.name.trim() || feeForm.amount <= 0) return;
+    if (feeForm.appliesTo === 'level' && !feeForm.targetLevel) return;
+    if (feeForm.appliesTo === 'class' && !feeForm.targetClassId) return;
     try {
       const fee = await api.post('/extra-fees', feeForm);
-      // Auto charge all active students
-      await api.post(`/extra-fees/${fee.id}/charge-all`);
-      addToast(`✓ Đã tạo phí "${fee.name}" và áp dụng cho tất cả HS!`);
+      const res = await api.post(`/extra-fees/${fee.id}/charge-all`);
+      const targetLabel = feeForm.appliesTo === 'all' ? 'tất cả HS' :
+        feeForm.appliesTo === 'level' ? `level ${getLevelInfo(feeForm.targetLevel).name}` :
+        `lớp ${classes.find(c => c.id === feeForm.targetClassId)?.name || ''}`;
+      addToast(`✓ Đã tạo phí "${fee.name}" cho ${targetLabel} (${res.count} HS)!`);
       refetchFees();
       refetchEfp();
       setFeeModal(null);
-      setFeeForm({ name: '', amount: 50000, description: '' });
+      setFeeForm({ name: '', amount: 50000, description: '', appliesTo: 'all', targetLevel: '', targetClassId: '' });
     } catch (err) { addToast('Lỗi: ' + err.message, 'error'); }
   };
 
@@ -498,8 +502,14 @@ export default function Tuition() {
                     {formatMoney(fee.amount)}
                   </div>
                   {fee.description && (
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8 }}>{fee.description}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4 }}>{fee.description}</div>
                   )}
+                  {/* Target badge */}
+                  <div style={{ fontSize: '0.72rem', marginBottom: 8 }}>
+                    {fee.appliesTo === 'all' && <span style={{ padding: '2px 8px', borderRadius: 6, background: 'rgba(79,140,255,0.1)', color: '#4f8cff' }}>Tất cả HS</span>}
+                    {fee.appliesTo === 'level' && <span style={{ padding: '2px 8px', borderRadius: 6, background: 'rgba(168,85,247,0.1)', color: '#a855f7' }}>{getLevelInfo(fee.targetLevel).name}</span>}
+                    {fee.appliesTo === 'class' && <span style={{ padding: '2px 8px', borderRadius: 6, background: 'rgba(245,158,11,0.1)', color: '#f59e0b' }}>Lớp {classes.find(c => c.id === fee.targetClassId)?.name || '...'}</span>}
+                  </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                     {fPaid}/{fTotal} đã đóng
                   </div>
@@ -632,10 +642,9 @@ export default function Tuition() {
         </div>
       )}
 
-      {/* Create Extra Fee Modal */}
       {feeModal === 'add' && (
         <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setFeeModal(null); }}>
-          <div className="modal-content" style={{ maxWidth: 420 }}>
+          <div className="modal-content" style={{ maxWidth: 440 }}>
             <div className="modal-header">
               <h2>Tạo phí phát sinh</h2>
               <button className="btn-icon" onClick={() => setFeeModal(null)}>✕</button>
@@ -653,13 +662,42 @@ export default function Tuition() {
               />
             </div>
             <div className="form-group">
+              <label>Áp dụng cho *</label>
+              <select className="form-select" value={feeForm.appliesTo}
+                onChange={e => setFeeForm(f => ({ ...f, appliesTo: e.target.value, targetLevel: '', targetClassId: '' }))}>
+                <option value="all">Tất cả học sinh</option>
+                <option value="level">Theo cấp độ (Level)</option>
+                <option value="class">Theo lớp</option>
+              </select>
+            </div>
+            {feeForm.appliesTo === 'level' && (
+              <div className="form-group">
+                <label>Chọn cấp độ *</label>
+                <select className="form-select" value={feeForm.targetLevel}
+                  onChange={e => setFeeForm(f => ({ ...f, targetLevel: e.target.value }))}>
+                  <option value="">— Chọn —</option>
+                  {CLASS_LEVELS.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                </select>
+              </div>
+            )}
+            {feeForm.appliesTo === 'class' && (
+              <div className="form-group">
+                <label>Chọn lớp *</label>
+                <select className="form-select" value={feeForm.targetClassId}
+                  onChange={e => setFeeForm(f => ({ ...f, targetClassId: e.target.value }))}>
+                  <option value="">— Chọn —</option>
+                  {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+            )}
+            <div className="form-group">
               <label>Mô tả (tuỳ chọn)</label>
               <input className="form-input" placeholder="Chi tiết khoản phí..." value={feeForm.description}
                 onChange={e => setFeeForm(f => ({ ...f, description: e.target.value }))}
               />
             </div>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '8px 0 0' }}>
-              💡 Phí sẽ tự động áp dụng cho tất cả học sinh đang học.
+              💡 Phí sẽ tự động áp dụng cho {feeForm.appliesTo === 'all' ? 'tất cả học sinh đang học' : feeForm.appliesTo === 'level' ? `học sinh cấp ${feeForm.targetLevel ? getLevelInfo(feeForm.targetLevel).name : '...'}` : `học sinh lớp ${feeForm.targetClassId ? (classes.find(c => c.id === feeForm.targetClassId)?.name || '...') : '...'}`}.
             </p>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setFeeModal(null)}>Huỷ</button>

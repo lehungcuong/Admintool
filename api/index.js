@@ -62,6 +62,9 @@ const extraFeeSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   amount: { type: Number, required: true },
   description: { type: String, default: '' },
+  appliesTo: { type: String, enum: ['all', 'level', 'class'], default: 'all' },
+  targetLevel: { type: String, default: '' },
+  targetClassId: { type: String, default: '' },
 }, { timestamps: true });
 const ExtraFee = mongoose.models.ExtraFee || mongoose.model('ExtraFee', extraFeeSchema);
 
@@ -274,12 +277,20 @@ app.use('/api/schedules', auth, crudRoutes(Schedule));
 app.use('/api/extra-fees', auth, crudRoutes(ExtraFee));
 app.use('/api/extra-fee-payments', auth, crudRoutes(ExtraFeePayment));
 
-// Extra fee: bulk charge all active students
+// Extra fee: bulk charge targeted students
 app.post('/api/extra-fees/:feeId/charge-all', auth, async (req, res) => {
   try {
     const fee = await ExtraFee.findById(req.params.feeId);
     if (!fee) return res.status(404).json({ error: 'Fee not found' });
-    const students = await Student.find({ status: 'active' });
+    let students = await Student.find({ status: 'active' });
+    if (fee.appliesTo === 'level' && fee.targetLevel) {
+      students = students.filter(s => s.level === fee.targetLevel);
+    }
+    if (fee.appliesTo === 'class' && fee.targetClassId) {
+      const enrolls = await Enrollment.find({ classId: fee.targetClassId });
+      const ids = new Set(enrolls.map(e => e.studentId));
+      students = students.filter(s => ids.has(s._id.toString()));
+    }
     const ops = students.map(s => ({
       updateOne: {
         filter: { feeId: fee._id.toString(), studentId: s._id.toString() },
