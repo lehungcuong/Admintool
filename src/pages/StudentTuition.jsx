@@ -290,67 +290,122 @@ export default function StudentTuition() {
 
             {/* QR Code Payment - SePay */}
             {nextUnpaidMonth && paymentConfig && (() => {
-              const deepLink = `https://dl.vietqr.io/pay?app=${paymentConfig.bankName.toLowerCase()}&ba=${paymentConfig.bankAccount}&am=${tuitionAmount}&addinfo=${encodeURIComponent(paymentCode)}`;
+              const deepLink = `https://dl.vietqr.io/pay?ba=${paymentConfig.bankAccount}&am=${tuitionAmount}&addinfo=${encodeURIComponent(paymentCode)}`;
               return (
-                <div className="qr-payment-card">
-                  <div className="qr-payment-header">
-                    <h3><HiOutlineQrcode /> Thanh toán học phí</h3>
-                    <button className="refresh-btn" onClick={() => refetchPayments.call ? refetchPayments() : null} title="Kiểm tra lại">
-                      <HiOutlineRefresh /> Kiểm tra
-                    </button>
-                  </div>
-
-                  {/* QR centered */}
-                  <div style={{ textAlign: 'center', padding: '16px 0 12px' }}>
-                    <img src={qrUrl} alt="QR" style={{ width: 180, height: 180, borderRadius: 12, background: '#fff', padding: 6, boxShadow: '0 2px 12px rgba(0,0,0,0.15)' }} />
-                  </div>
-
-                  {/* Compact info */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 16px', fontSize: '0.78rem', color: 'var(--text-muted)', padding: '0 16px 12px' }}>
-                    <span><strong style={{ color: 'var(--text-primary)' }}>{paymentConfig.bankName}</strong> — {paymentConfig.bankAccount}</span>
-                    <span>CTK: <strong style={{ color: 'var(--text-primary)' }}>{paymentConfig.beneficiary}</strong></span>
-                    <span>Số tiền: <strong style={{ color: '#ef4444' }}>{formatMoney(tuitionAmount)}</strong></span>
-                  </div>
-
-                  {/* Transfer code + copy */}
+                <div style={{
+                  background: 'linear-gradient(145deg, rgba(30,35,60,0.95), rgba(20,24,45,0.98))',
+                  border: '1px solid rgba(99,102,241,0.2)',
+                  borderRadius: 16, overflow: 'hidden',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
+                }}>
+                  {/* Header */}
                   <div style={{
-                    margin: '0 16px 12px', padding: '10px 14px', borderRadius: 8,
-                    background: 'rgba(79,140,255,0.06)', border: '1px dashed rgba(79,140,255,0.2)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap',
+                    padding: '16px 20px',
+                    background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(79,140,255,0.06))',
+                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      Nội dung CK: <strong style={{ color: 'var(--accent-blue)', letterSpacing: 1, fontSize: '0.85rem' }}>{paymentCode}</strong>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <HiOutlineCash /> Thanh toán học phí
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
+                        {MONTH_NAMES[nextUnpaidMonth.month - 1]} {nextUnpaidMonth.year}
+                      </div>
                     </div>
-                    <button onClick={() => copyToClipboard(paymentCode)} className="copy-btn" style={{ flexShrink: 0 }}>
-                      <HiOutlineClipboard /> {copied ? 'Đã copy!' : 'Copy'}
-                    </button>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontWeight: 800, fontSize: '1.2rem', color: '#fff' }}>{formatMoney(tuitionAmount)}</div>
+                      <button onClick={() => refetchPayments.call ? refetchPayments() : null}
+                        style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: 3, marginLeft: 'auto' }}>
+                        <HiOutlineRefresh /> Kiểm tra
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Open banking app (mobile) */}
-                  <div style={{ padding: '0 16px 16px', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {/* Body: QR + Info side by side */}
+                  <div style={{ padding: '20px', display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {/* QR */}
+                    <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                      <div style={{
+                        padding: 8, background: '#fff', borderRadius: 12,
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                        display: 'inline-block',
+                      }}>
+                        <img src={qrUrl} alt="QR" style={{ width: 160, height: 160, display: 'block', borderRadius: 6 }} />
+                      </div>
+                      <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', marginTop: 6 }}>Quét bằng app ngân hàng</div>
+                    </div>
+
+                    {/* Bank details */}
+                    <div style={{ flex: 1, minWidth: 180, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {[
+                        { label: 'Ngân hàng', value: paymentConfig.bankName, icon: '🏦' },
+                        { label: 'Số TK', value: paymentConfig.bankAccount, icon: '📋' },
+                        { label: 'Chủ TK', value: paymentConfig.beneficiary, icon: '👤' },
+                      ].map((r, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: '0.8rem' }}>{r.icon}</span>
+                          <div>
+                            <div style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600 }}>{r.label}</div>
+                            <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#fff' }}>{r.value}</div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Transfer content */}
+                      <div style={{
+                        marginTop: 4, padding: '8px 12px', borderRadius: 8,
+                        background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)',
+                      }}>
+                        <div style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, marginBottom: 4 }}>
+                          Nội dung CK
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                          <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#a5b4fc', letterSpacing: 0.5 }}>{paymentCode}</span>
+                          <button onClick={() => copyToClipboard(paymentCode)}
+                            style={{
+                              background: 'rgba(255,255,255,0.1)', border: 'none', color: '#a5b4fc',
+                              cursor: 'pointer', padding: '4px 10px', borderRadius: 6,
+                              fontSize: '0.72rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3,
+                              transition: 'all 0.2s',
+                            }}>
+                            <HiOutlineClipboard /> {copied ? '✓' : 'Copy'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div style={{ padding: '0 20px 16px', display: 'flex', gap: 10 }}>
                     <a href={deepLink} target="_blank" rel="noopener noreferrer" style={{
-                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                      padding: '10px 16px', borderRadius: 8,
-                      background: 'linear-gradient(135deg, #4f8cff, #6366f1)', color: '#fff',
-                      fontWeight: 700, fontSize: '0.85rem', textDecoration: 'none',
-                      boxShadow: '0 2px 8px rgba(79,140,255,0.3)', transition: 'all 0.2s',
-                      minWidth: 180,
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      padding: '12px 16px', borderRadius: 10,
+                      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff',
+                      fontWeight: 700, fontSize: '0.88rem', textDecoration: 'none',
+                      boxShadow: '0 4px 12px rgba(99,102,241,0.4)',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
                     }}>
                       🏦 Mở app ngân hàng
                     </a>
                   </div>
 
-                  <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textAlign: 'center', padding: '0 16px 12px', margin: 0 }}>
-                    ⚠️ Ghi đúng nội dung CK để hệ thống tự động xác nhận
-                  </p>
+                  <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '0 20px 14px' }}>
+                    Ghi đúng nội dung CK để hệ thống tự động xác nhận • Hỗ trợ tất cả ngân hàng
+                  </div>
                 </div>
               );
             })()}
 
             {!nextUnpaidMonth && (
-              <div className="qr-payment-card">
-                <h3 style={{ color: '#22c55e' }}><HiOutlineCheck /> Đã đóng đủ học phí!</h3>
-                <p className="subtitle">Bạn đã đóng đầy đủ học phí. Cảm ơn bạn!</p>
+              <div style={{
+                background: 'linear-gradient(145deg, rgba(34,197,94,0.08), rgba(20,24,45,0.95))',
+                border: '1px solid rgba(34,197,94,0.2)', borderRadius: 16,
+                padding: '24px', textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '2rem', marginBottom: 8 }}>✓</div>
+                <div style={{ fontWeight: 700, fontSize: '1rem', color: '#22c55e' }}>Đã đóng đủ học phí!</div>
+                <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>Cảm ơn bạn đã đóng đầy đủ.</div>
               </div>
             )}
 
@@ -358,7 +413,7 @@ export default function StudentTuition() {
             {myExtraFees.length > 0 && (
               <div className="schedule-section" style={{ marginTop: 16 }}>
                 <h3><HiOutlineCollection /> Phí phát sinh</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {myExtraFees.map(fee => {
                     const shortId = fee.id.slice(-6).toUpperCase();
                     const feePayCode = user?.username ? `EH ${user.username.toUpperCase()} PHI${shortId}` : '';
@@ -366,69 +421,69 @@ export default function StudentTuition() {
                       ? `https://qr.sepay.vn/img?acc=${paymentConfig.bankAccount}&bank=${paymentConfig.bankName}&amount=${fee.amount}&des=${encodeURIComponent(feePayCode)}`
                       : '';
                     const feeDeepLink = paymentConfig && !fee.paid
-                      ? `https://dl.vietqr.io/pay?app=${paymentConfig.bankName.toLowerCase()}&ba=${paymentConfig.bankAccount}&am=${fee.amount}&addinfo=${encodeURIComponent(feePayCode)}`
+                      ? `https://dl.vietqr.io/pay?ba=${paymentConfig.bankAccount}&am=${fee.amount}&addinfo=${encodeURIComponent(feePayCode)}`
                       : '';
 
                     if (fee.paid) {
                       return (
                         <div key={fee.id} style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-                          borderRadius: 'var(--radius-md)', padding: '14px 18px',
-                          borderLeft: '4px solid #22c55e',
+                          background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.15)',
+                          borderRadius: 12, padding: '12px 16px',
                         }}>
-                          <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--text-primary)' }}>{fee.name}</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.85rem' }}>{formatMoney(fee.amount)}</span>
-                            <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: '0.72rem', fontWeight: 700, background: 'rgba(34,197,94,0.12)', color: '#22c55e' }}>✓ Đã đóng</span>
+                          <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{fee.name}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.4)', fontSize: '0.82rem' }}>{formatMoney(fee.amount)}</span>
+                            <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.7rem', fontWeight: 700, background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>✓ Đã đóng</span>
                           </div>
                         </div>
                       );
                     }
 
-                    // Unpaid — compact card
+                    // Unpaid — premium compact card
                     return (
                       <div key={fee.id} style={{
-                        background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-                        borderRadius: 'var(--radius-md)', overflow: 'hidden',
-                        borderLeft: '4px solid #ef4444',
+                        background: 'linear-gradient(145deg, rgba(30,35,60,0.95), rgba(20,24,45,0.98))',
+                        border: '1px solid rgba(239,68,68,0.15)', borderRadius: 12, overflow: 'hidden',
                       }}>
-                        {/* Header row */}
-                        <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{fee.name}</div>
-                            {fee.description && <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>{fee.description}</div>}
+                            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#fff' }}>{fee.name}</div>
+                            {fee.description && <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{fee.description}</div>}
                           </div>
-                          <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#ef4444' }}>{formatMoney(fee.amount)}</div>
+                          <div style={{ fontWeight: 800, fontSize: '1rem', color: '#ef4444' }}>{formatMoney(fee.amount)}</div>
                         </div>
 
-                        {/* QR + actions */}
                         {paymentConfig && (
-                          <div style={{ padding: '0 18px 16px', textAlign: 'center' }}>
-                            <img src={feeQrUrl} alt="QR" style={{ width: 150, height: 150, borderRadius: 10, background: '#fff', padding: 4, boxShadow: '0 1px 8px rgba(0,0,0,0.12)' }} />
-
-                            {/* Transfer code */}
-                            <div style={{
-                              marginTop: 10, padding: '8px 12px', borderRadius: 6,
-                              background: 'rgba(79,140,255,0.06)', border: '1px dashed rgba(79,140,255,0.2)',
-                              display: 'inline-flex', alignItems: 'center', gap: 8,
-                            }}>
-                              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>CK:</span>
-                              <strong style={{ fontSize: '0.82rem', color: 'var(--accent-blue)', letterSpacing: 0.5 }}>{feePayCode}</strong>
-                              <button onClick={() => { navigator.clipboard.writeText(feePayCode); addToast('Đã copy!'); }}
-                                style={{ background: 'none', border: 'none', color: 'var(--accent-blue)', cursor: 'pointer', padding: 2 }}>
-                                <HiOutlineClipboard />
-                              </button>
+                          <div style={{ padding: '0 16px 14px', display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+                            {/* Small QR */}
+                            <div style={{ padding: 4, background: '#fff', borderRadius: 8, display: 'inline-block', flexShrink: 0 }}>
+                              <img src={feeQrUrl} alt="QR" style={{ width: 100, height: 100, display: 'block', borderRadius: 4 }} />
                             </div>
 
-                            {/* Open bank app */}
-                            <div style={{ marginTop: 10 }}>
+                            <div style={{ flex: 1, minWidth: 140, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {/* Transfer code */}
+                              <div style={{
+                                padding: '6px 10px', borderRadius: 6,
+                                background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.15)',
+                              }}>
+                                <div style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600 }}>Nội dung CK</div>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4, marginTop: 2 }}>
+                                  <span style={{ fontWeight: 700, fontSize: '0.78rem', color: '#a5b4fc', letterSpacing: 0.3 }}>{feePayCode}</span>
+                                  <button onClick={() => { navigator.clipboard.writeText(feePayCode); addToast('Đã copy!'); }}
+                                    style={{ background: 'none', border: 'none', color: '#a5b4fc', cursor: 'pointer', padding: 2, fontSize: '0.78rem' }}>
+                                    <HiOutlineClipboard />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Bank app button */}
                               <a href={feeDeepLink} target="_blank" rel="noopener noreferrer" style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 6,
-                                padding: '8px 20px', borderRadius: 8,
-                                background: 'linear-gradient(135deg, #4f8cff, #6366f1)', color: '#fff',
-                                fontWeight: 600, fontSize: '0.8rem', textDecoration: 'none',
-                                boxShadow: '0 2px 6px rgba(79,140,255,0.25)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                padding: '8px 14px', borderRadius: 8,
+                                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff',
+                                fontWeight: 600, fontSize: '0.78rem', textDecoration: 'none',
+                                boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
                               }}>
                                 🏦 Mở app ngân hàng
                               </a>
