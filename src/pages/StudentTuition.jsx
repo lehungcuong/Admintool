@@ -547,14 +547,35 @@ export default function StudentTuition() {
 
       {/* Contact footer */}
       <div style={{
-        textAlign: 'center', padding: '16px 20px', marginTop: 24,
-        fontSize: '0.8rem', color: 'var(--text-muted)',
+        textAlign: 'center', padding: '20px 24px', marginTop: 32,
         borderTop: '1px solid rgba(255,255,255,0.06)',
       }}>
-        Cần tư vấn về kỹ thuật hay thắc mắc? Liên hệ{' '}
-        <a href="tel:0964848934" style={{ color: 'var(--accent-blue)', fontWeight: 600, textDecoration: 'none' }}>
-          Cô My — 0964 848 934
-        </a>
+        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 8 }}>
+          Cần hỗ trợ kỹ thuật hoặc có thắc mắc?
+        </div>
+        <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', fontWeight: 600, marginBottom: 10 }}>
+          Liên hệ Cô Đào Lê Diễm My
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <a href="tel:0964848934" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '8px 16px', borderRadius: 20,
+            background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)',
+            color: '#22c55e', fontSize: '0.82rem', fontWeight: 600,
+            textDecoration: 'none', transition: 'all 0.2s',
+          }}>
+            📞 0964 848 934
+          </a>
+          <a href="https://zalo.me/0964848934" target="_blank" rel="noopener noreferrer" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '8px 16px', borderRadius: 20,
+            background: 'rgba(79,140,255,0.1)', border: '1px solid rgba(79,140,255,0.2)',
+            color: '#4f8cff', fontSize: '0.82rem', fontWeight: 600,
+            textDecoration: 'none', transition: 'all 0.2s',
+          }}>
+            💬 Nhắn Zalo
+          </a>
+        </div>
       </div>
     </div>
   );
