@@ -161,12 +161,14 @@ export default function Students() {
     if (!validateForm()) return;
     try {
       if (modal === 'add') {
-        const result = await api.post('/students', form);
+        const payload = { ...form, tuitionAmount: form.tuitionAmount === '' ? undefined : Number(form.tuitionAmount) };
+        const result = await api.post('/students', payload);
         setCreatedAccount({ username: result.username, password: result.password, studentName: form.name.trim() });
         setModal('account-created');
         addToast('Thêm học sinh thành công!');
       } else {
-        await api.put(`/students/${editingStudent.id}`, form);
+        const payload = { ...form, tuitionAmount: form.tuitionAmount === '' ? undefined : Number(form.tuitionAmount) };
+        await api.put(`/students/${editingStudent.id}`, payload);
         addToast('Cập nhật học sinh thành công!');
         setModal(null);
       }
