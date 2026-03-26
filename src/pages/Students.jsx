@@ -4,7 +4,7 @@ import { useApi } from '../hooks/useApi';
 import api from '../utils/api';
 import { useToast } from '../components/Toast';
 import { CLASS_LEVELS, getLevelInfo, getPaymentInfo } from '../utils/data';
-import { HiOutlineSearch, HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineUpload, HiOutlineDownload, HiOutlineKey } from 'react-icons/hi';
+import { HiOutlineSearch, HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineUpload, HiOutlineDownload, HiOutlineKey, HiOutlineCash, HiOutlineExclamationCircle } from 'react-icons/hi';
 
 // Map Vietnamese/English column names to our fields
 const COLUMN_MAP = {
@@ -31,6 +31,8 @@ const STATUS_MAP = {
 export default function Students() {
   const [students, setStudents, { refetch }] = useApi('/students');
   const [payments, , { refetch: refetchPayments }] = useApi('/payments');
+  const [extraFees] = useApi('/extra-fees');
+  const [extraFeePayments] = useApi('/extra-fee-payments');
   const [search, setSearch] = useState('');
   const [filterLevel, setFilterLevel] = useState('all');
   const [modal, setModal] = useState(null);
@@ -40,12 +42,56 @@ export default function Students() {
   const addToast = useToast();
   const [createdAccount, setCreatedAccount] = useState(null);
   const [formErrors, setFormErrors] = useState({});
+  const [detailStudent, setDetailStudent] = useState(null);
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
 
   const isStudentPaidThisMonth = (studentId) => {
     return payments.some(p => p.studentId === studentId && p.month === currentMonth && p.year === currentYear);
+  };
+
+  const formatMoney = (n) => n?.toLocaleString('vi-VN') + 'đ';
+
+  // Get all unpaid items for a student
+  const getUnpaidItems = (student) => {
+    if (!student) return [];
+    const items = [];
+
+    // 1) Unpaid monthly tuition — count back from current month to enrollment
+    const enrollDate = new Date(student.enrolledAt || student.createdAt);
+    const startMonth = !isNaN(enrollDate.getTime()) ? enrollDate.getMonth() + 1 : currentMonth;
+    const startYear = !isNaN(enrollDate.getTime()) ? enrollDate.getFullYear() : currentYear;
+    let y = currentYear, m = currentMonth;
+    for (let i = 0; i < 12; i++) {
+      if (y < startYear || (y === startYear && m < startMonth)) break;
+      const paid = payments.some(p => p.studentId === student.id && p.month === m && p.year === y);
+      const partial = payments.find(p => p.studentId === student.id && p.month === m && p.year === y && p.amount && p.expectedAmount && p.amount < p.expectedAmount);
+      if (!paid) {
+        items.push({ type: 'tuition', label: `Học phí T${m}/${y}`, amount: student.tuitionAmount || 500000 });
+      } else if (partial) {
+        items.push({ type: 'partial', label: `Học phí T${m}/${y} (1 phần)`, amount: partial.expectedAmount - partial.amount });
+      }
+      m--;
+      if (m === 0) { m = 12; y--; }
+    }
+
+    // 2) Unpaid extra fees
+    extraFees.forEach(fee => {
+      const rec = extraFeePayments.find(p => p.feeId === fee.id && p.studentId === student.id);
+      if (rec && !rec.paid) {
+        items.push({ type: 'extra', label: fee.name, amount: fee.amount });
+      } else if (!rec) {
+        // No record but fee applies to all / matches level
+        let applies = fee.appliesTo === 'all';
+        if (fee.appliesTo === 'level' && fee.targetLevel === student.level) applies = true;
+        if (applies) {
+          items.push({ type: 'extra', label: fee.name, amount: fee.amount });
+        }
+      }
+    });
+
+    return items;
   };
 
   const togglePayment = async (studentId) => {
@@ -270,11 +316,15 @@ export default function Students() {
               return (
                 <tr key={student.id}>
                   <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+                      onClick={() => { setDetailStudent(student); setModal('detail'); }}
+                      title="Xem khoản chưa đóng"
+                    >
                       <div className="avatar" style={{ background: level.color + '22', color: level.color }}>
                         {student.name.charAt(0)}
                       </div>
-                      {student.name}
+                      <span style={{ borderBottom: '1px dashed rgba(255,255,255,0.2)' }}>{student.name}</span>
                     </div>
                   </td>
                   <td>{student.phone}</td>
@@ -493,6 +543,84 @@ export default function Students() {
           </div>
         </div>
       )}
+
+      {/* Unpaid Detail Modal */}
+      {modal === 'detail' && detailStudent && (() => {
+        const unpaid = getUnpaidItems(detailStudent);
+        const total = unpaid.reduce((s, i) => s + i.amount, 0);
+        const level = getLevelInfo(detailStudent.level);
+        return (
+          <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) { setModal(null); setDetailStudent(null); } }}>
+            <div className="modal-content" style={{ maxWidth: 480 }}>
+              <div className="modal-header">
+                <h2 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <HiOutlineCash /> Khoản chưa đóng
+                </h2>
+                <button className="btn-icon" onClick={() => { setModal(null); setDetailStudent(null); }}>✕</button>
+              </div>
+
+              {/* Student info */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16,
+                padding: '12px 16px', background: 'rgba(79,140,255,0.05)', borderRadius: 'var(--radius-md)',
+                border: '1px solid rgba(79,140,255,0.1)',
+              }}>
+                <div className="avatar" style={{ background: level.color + '22', color: level.color, width: 40, height: 40, fontSize: '1rem' }}>
+                  {detailStudent.name.charAt(0)}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{detailStudent.name}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    {level.name} • {detailStudent.phone || 'Chưa có SĐT'}
+                  </div>
+                </div>
+              </div>
+
+              {unpaid.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: '#22c55e' }}>
+                  <div style={{ fontSize: '2rem', marginBottom: 8 }}>✓</div>
+                  <div style={{ fontWeight: 600 }}>Không có khoản nào chưa đóng!</div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 320, overflowY: 'auto' }}>
+                    {unpaid.map((item, i) => (
+                      <div key={i} style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '10px 14px', borderRadius: 'var(--radius-sm)',
+                        background: 'var(--bg-card)', border: '1px solid var(--border-color)',
+                        borderLeft: `3px solid ${item.type === 'extra' ? '#f59e0b' : item.type === 'partial' ? '#f97316' : '#ef4444'}`,
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <HiOutlineExclamationCircle style={{ color: item.type === 'extra' ? '#f59e0b' : '#ef4444', flexShrink: 0 }} />
+                          <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>{item.label}</span>
+                        </div>
+                        <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#ef4444', whiteSpace: 'nowrap' }}>
+                          {formatMoney(item.amount)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Total */}
+                  <div style={{
+                    marginTop: 12, padding: '12px 16px', borderRadius: 'var(--radius-md)',
+                    background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  }}>
+                    <span style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--text-primary)' }}>Tổng cộng</span>
+                    <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#ef4444' }}>{formatMoney(total)}</span>
+                  </div>
+                </>
+              )}
+
+              <div className="modal-footer">
+                <button className="btn btn-primary" onClick={() => { setModal(null); setDetailStudent(null); }}>Đóng</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
