@@ -35,6 +35,9 @@ const VN_BANKS = [
   { code: 'vietinbank', name: 'VietinBank', color: '#003a70' },
   { code: 'hdbank', name: 'HDBank', color: '#e21a22' },
   { code: 'ocb', name: 'OCB', color: '#004b87' },
+  { code: 'citibank', name: 'Citibank', color: '#003da5' },
+  { code: 'hsbc', name: 'HSBC', color: '#db0011' },
+  { code: 'shinhanbank', name: 'Shinhan', color: '#0046a6' },
 ];
 
 export default function StudentTuition() {
