@@ -31,7 +31,7 @@ export default function Login() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-logo">
-          <img src="/logo.png" alt="Phuc Ngon English Center" style={{ width: 120, height: 120, objectFit: 'contain', marginBottom: 8 }} />
+          <img src="/logo.png" alt="Phuc Ngon English Center" style={{ width: 160, height: 160, objectFit: 'contain', marginBottom: 8 }} />
           <h1>Anh Ngữ Phúc Ngôn</h1>
           <p>Đăng nhập để tiếp tục</p>
         </div>
