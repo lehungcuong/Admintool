@@ -121,25 +121,23 @@ export default function Tuition() {
   };
 
   const getOverdueMonths = (studentId) => {
-    // Find earliest enrollment date for this student
-    const studentEnrollments = enrollments.filter(e => e.studentId === studentId);
-    let enrollMonth = 1, enrollYear = currentYear;
-    if (studentEnrollments.length > 0) {
-      // Use earliest createdAt or enrolledAt
-      const earliest = studentEnrollments.reduce((min, e) => {
-        const d = new Date(e.enrolledAt || e.createdAt);
-        return d < min ? d : min;
-      }, new Date(studentEnrollments[0].enrolledAt || studentEnrollments[0].createdAt));
-      enrollMonth = earliest.getMonth() + 1;
-      enrollYear = earliest.getFullYear();
+    // Use student's enrolledAt (or createdAt) as the start date for tuition
+    const student = students.find(s => s.id === studentId);
+    let startMonth = currentMonth, startYear = currentYear;
+    if (student) {
+      const d = new Date(student.enrolledAt || student.createdAt);
+      if (!isNaN(d.getTime())) {
+        startMonth = d.getMonth() + 1;
+        startYear = d.getFullYear();
+      }
     }
 
     let count = 0;
     let y = currentYear;
     let m = currentMonth;
     for (let i = 0; i < 12; i++) {
-      // Don't count months before enrollment
-      if (y < enrollYear || (y === enrollYear && m < enrollMonth)) break;
+      // Don't count months before student was created
+      if (y < startYear || (y === startYear && m < startMonth)) break;
       const paid = payments.some(p => p.studentId === studentId && p.month === m && p.year === y);
       if (paid) break;
       count++;
