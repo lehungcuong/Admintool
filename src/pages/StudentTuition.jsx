@@ -23,21 +23,21 @@ const DAY_NAMES = { mon: 'Thứ 2', tue: 'Thứ 3', wed: 'Thứ 4', thu: 'Thứ 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 const VN_BANKS = [
+  { code: 'mb', name: 'MB Bank', logo: 'https://api.vietqr.io/img/MB.png' },
+  { code: 'vcb', name: 'Vietcombank', logo: 'https://api.vietqr.io/img/VCB.png' },
+  { code: 'tcb', name: 'Techcombank', logo: 'https://api.vietqr.io/img/TCB.png' },
   { code: 'bidv', name: 'BIDV', logo: 'https://api.vietqr.io/img/BIDV.png' },
-  { code: 'vietcombank', name: 'Vietcombank', logo: 'https://api.vietqr.io/img/VCB.png' },
-  { code: 'techcombank', name: 'Techcombank', logo: 'https://api.vietqr.io/img/TCB.png' },
-  { code: 'mbbank', name: 'MB Bank', logo: 'https://api.vietqr.io/img/MB.png' },
+  { code: 'icb', name: 'VietinBank', logo: 'https://api.vietqr.io/img/ICB.png' },
   { code: 'acb', name: 'ACB', logo: 'https://api.vietqr.io/img/ACB.png' },
-  { code: 'tpbank', name: 'TPBank', logo: 'https://api.vietqr.io/img/TPB.png' },
-  { code: 'sacombank', name: 'Sacombank', logo: 'https://api.vietqr.io/img/STB.png' },
-  { code: 'vpbank', name: 'VPBank', logo: 'https://api.vietqr.io/img/VPB.png' },
-  { code: 'agribank', name: 'Agribank', logo: 'https://api.vietqr.io/img/VBA.png' },
-  { code: 'vietinbank', name: 'VietinBank', logo: 'https://api.vietqr.io/img/ICB.png' },
-  { code: 'hdbank', name: 'HDBank', logo: 'https://api.vietqr.io/img/HDB.png' },
+  { code: 'tpb', name: 'TPBank', logo: 'https://api.vietqr.io/img/TPB.png' },
+  { code: 'vpb', name: 'VPBank', logo: 'https://api.vietqr.io/img/VPB.png' },
+  { code: 'vba', name: 'Agribank', logo: 'https://api.vietqr.io/img/VBA.png' },
+  { code: 'hdb', name: 'HDBank', logo: 'https://api.vietqr.io/img/HDB.png' },
   { code: 'ocb', name: 'OCB', logo: 'https://api.vietqr.io/img/OCB.png' },
-  { code: 'citibank', name: 'Citibank', logo: 'https://api.vietqr.io/img/CITIBANK.png' },
-  { code: 'hsbc', name: 'HSBC', logo: 'https://api.vietqr.io/img/HSBC.png' },
-  { code: 'shinhanbank', name: 'Shinhan', logo: 'https://api.vietqr.io/img/SHINHANBANK.png' },
+  { code: 'shb', name: 'SHB', logo: 'https://api.vietqr.io/img/SHB.png' },
+  { code: 'vib-2', name: 'VIB', logo: 'https://api.vietqr.io/img/VIB.png' },
+  { code: 'lpb', name: 'LPBank', logo: 'https://api.vietqr.io/img/LPB.png' },
+  { code: 'shbvn', name: 'Shinhan', logo: 'https://api.vietqr.io/img/SHINHANBANK.png' },
 ];
 
 export default function StudentTuition() {
