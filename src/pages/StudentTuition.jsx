@@ -23,21 +23,21 @@ const DAY_NAMES = { mon: 'Thứ 2', tue: 'Thứ 3', wed: 'Thứ 4', thu: 'Thứ 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 const VN_BANKS = [
-  { code: 'bidv', name: 'BIDV', color: '#00539f' },
-  { code: 'vietcombank', name: 'Vietcombank', color: '#00693e' },
-  { code: 'techcombank', name: 'Techcombank', color: '#e31837' },
-  { code: 'mbbank', name: 'MB Bank', color: '#1e4d8c' },
-  { code: 'acb', name: 'ACB', color: '#1a1a6c' },
-  { code: 'tpbank', name: 'TPBank', color: '#5b2d8e' },
-  { code: 'sacombank', name: 'Sacombank', color: '#003399' },
-  { code: 'vpbank', name: 'VPBank', color: '#00843d' },
-  { code: 'agribank', name: 'Agribank', color: '#e4002b' },
-  { code: 'vietinbank', name: 'VietinBank', color: '#003a70' },
-  { code: 'hdbank', name: 'HDBank', color: '#e21a22' },
-  { code: 'ocb', name: 'OCB', color: '#004b87' },
-  { code: 'citibank', name: 'Citibank', color: '#003da5' },
-  { code: 'hsbc', name: 'HSBC', color: '#db0011' },
-  { code: 'shinhanbank', name: 'Shinhan', color: '#0046a6' },
+  { code: 'bidv', name: 'BIDV', logo: 'https://api.vietqr.io/img/BIDV.png' },
+  { code: 'vietcombank', name: 'Vietcombank', logo: 'https://api.vietqr.io/img/VCB.png' },
+  { code: 'techcombank', name: 'Techcombank', logo: 'https://api.vietqr.io/img/TCB.png' },
+  { code: 'mbbank', name: 'MB Bank', logo: 'https://api.vietqr.io/img/MB.png' },
+  { code: 'acb', name: 'ACB', logo: 'https://api.vietqr.io/img/ACB.png' },
+  { code: 'tpbank', name: 'TPBank', logo: 'https://api.vietqr.io/img/TPB.png' },
+  { code: 'sacombank', name: 'Sacombank', logo: 'https://api.vietqr.io/img/STB.png' },
+  { code: 'vpbank', name: 'VPBank', logo: 'https://api.vietqr.io/img/VPB.png' },
+  { code: 'agribank', name: 'Agribank', logo: 'https://api.vietqr.io/img/VBA.png' },
+  { code: 'vietinbank', name: 'VietinBank', logo: 'https://api.vietqr.io/img/ICB.png' },
+  { code: 'hdbank', name: 'HDBank', logo: 'https://api.vietqr.io/img/HDB.png' },
+  { code: 'ocb', name: 'OCB', logo: 'https://api.vietqr.io/img/OCB.png' },
+  { code: 'citibank', name: 'Citibank', logo: 'https://api.vietqr.io/img/CITIBANK.png' },
+  { code: 'hsbc', name: 'HSBC', logo: 'https://api.vietqr.io/img/HSBC.png' },
+  { code: 'shinhanbank', name: 'Shinhan', logo: 'https://api.vietqr.io/img/SHINHANBANK.png' },
 ];
 
 export default function StudentTuition() {
@@ -664,12 +664,11 @@ export default function StudentTuition() {
                   }}
                 >
                   <div style={{
-                    width: 40, height: 40, borderRadius: 10,
-                    background: bank.color, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: 800, fontSize: '0.6rem', color: '#fff', letterSpacing: 0.5,
-                    boxShadow: `0 2px 8px ${bank.color}55`,
+                    width: 44, height: 44, borderRadius: 10,
+                    background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    overflow: 'hidden', padding: 4,
                   }}>
-                    {bank.name.slice(0, 3).toUpperCase()}
+                    <img src={bank.logo} alt={bank.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                   </div>
                   <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', textAlign: 'center' }}>
                     {bank.name}
