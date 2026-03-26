@@ -43,7 +43,7 @@ const VN_BANKS = [
 export default function StudentTuition() {
   const { user, logout, roleLabel } = useAuth();
   const addToast = useToast();
-  const [students] = useApi('/students');
+  const [students, , { refetch: refetchStudents }] = useApi('/students');
   const [payments, , { refetch: refetchPayments }] = useApi('/payments');
   const [classes] = useApi('/classes');
   const [enrollments] = useApi('/enrollments');
@@ -228,7 +228,31 @@ export default function StudentTuition() {
           <div className="student-details">
             <h2>{student.name}</h2>
             <div className="student-meta">
-              {student.phone && <span><HiOutlinePhone /> {student.phone}</span>}
+              {student.phone ? (
+                <span style={{ cursor: 'pointer' }} onClick={async () => {
+                  const input = prompt('Cập nhật số điện thoại:', student.phone);
+                  if (input === null || input === student.phone) return;
+                  try {
+                    await api.put(`/students/${student.id}`, { phone: input });
+                    addToast('Đã cập nhật số điện thoại!');
+                    refetchStudents();
+                  } catch (err) { addToast('Lỗi: ' + err.message, 'error'); }
+                }} title="Click để sửa SĐT">
+                  <HiOutlinePhone /> {student.phone} ✎
+                </span>
+              ) : (
+                <span style={{ cursor: 'pointer', color: 'var(--accent-blue)' }} onClick={async () => {
+                  const input = prompt('Nhập số điện thoại:');
+                  if (!input) return;
+                  try {
+                    await api.put(`/students/${student.id}`, { phone: input });
+                    addToast('Đã cập nhật số điện thoại!');
+                    refetchStudents();
+                  } catch (err) { addToast('Lỗi: ' + err.message, 'error'); }
+                }} title="Thêm SĐT">
+                  <HiOutlinePhone /> Thêm SĐT
+                </span>
+              )}
               <span><HiOutlineAcademicCap style={{ color: level.color }} /> {level.name}</span>
               {student.dob && <span><HiOutlineCalendar /> {student.dob}</span>}
               {myClasses.length > 0 && <span><HiOutlineBookOpen /> {myClasses.map(c => c.name).join(', ')}</span>}
