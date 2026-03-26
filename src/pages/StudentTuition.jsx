@@ -544,6 +544,18 @@ export default function StudentTuition() {
           </>
         )}
       </div>
+
+      {/* Contact footer */}
+      <div style={{
+        textAlign: 'center', padding: '16px 20px', marginTop: 24,
+        fontSize: '0.8rem', color: 'var(--text-muted)',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+      }}>
+        Cần tư vấn về kỹ thuật hay thắc mắc? Liên hệ{' '}
+        <a href="tel:0964848934" style={{ color: 'var(--accent-blue)', fontWeight: 600, textDecoration: 'none' }}>
+          Cô My — 0964 848 934
+        </a>
+      </div>
     </div>
   );
 }
