@@ -412,7 +412,7 @@ export default function Students() {
             </div>
             <div className="form-group">
               <label>Học phí / tháng (đ)</label>
-              <input className="form-input" type="number" min="0" step="50000" value={form.tuitionAmount || 500000} onChange={e => setForm({ ...form, tuitionAmount: Number(e.target.value) })} />
+              <input className="form-input" type="number" min="0" step="50000" placeholder="500000" value={form.tuitionAmount ?? ''} onChange={e => setForm({ ...form, tuitionAmount: e.target.value === '' ? '' : Number(e.target.value) })} />
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setModal(null)}>Huỷ</button>
