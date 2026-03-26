@@ -205,13 +205,27 @@ export default function Tuition() {
     return rec?.paid || false;
   };
 
+  // Get the target students for a fee based on its appliesTo setting
+  const getTargetStudents = (fee) => {
+    if (!fee) return [];
+    let targets = activeStudents;
+    if (fee.appliesTo === 'level' && fee.targetLevel) {
+      targets = targets.filter(s => s.level === fee.targetLevel);
+    } else if (fee.appliesTo === 'class' && fee.targetClassId) {
+      const enrolledIds = new Set(enrollments.filter(e => e.classId === fee.targetClassId).map(e => e.studentId));
+      targets = targets.filter(s => enrolledIds.has(s.id));
+    }
+    return targets;
+  };
+
   const feeStudents = useMemo(() => {
     if (!selectedFee) return [];
-    return activeStudents.filter(s => {
+    const fee = extraFees.find(f => f.id === selectedFee);
+    return getTargetStudents(fee).filter(s => {
       const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || (s.phone || '').includes(search);
       return matchSearch;
     });
-  }, [selectedFee, activeStudents, search]);
+  }, [selectedFee, activeStudents, enrollments, extraFees, search]);
 
   const feePaidCount = selectedFee ? feeStudents.filter(s => getEfpStatus(selectedFee, s.id)).length : 0;
   const feeUnpaidCount = selectedFee ? feeStudents.length - feePaidCount : 0;
@@ -492,9 +506,9 @@ export default function Tuition() {
           {/* Fee Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12, marginBottom: 24 }}>
             {extraFees.map(fee => {
-              const feePayments = extraFeePayments.filter(p => p.feeId === fee.id);
-              const fPaid = feePayments.filter(p => p.paid).length;
-              const fTotal = feePayments.length;
+              const targetStudents = getTargetStudents(fee);
+              const fPaid = targetStudents.filter(s => getEfpStatus(fee.id, s.id)).length;
+              const fTotal = targetStudents.length;
               const isSelected = selectedFee === fee.id;
 
               return (
