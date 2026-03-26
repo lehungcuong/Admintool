@@ -290,7 +290,7 @@ export default function StudentTuition() {
 
             {/* QR Code Payment - SePay */}
             {nextUnpaidMonth && paymentConfig && (() => {
-              const deepLink = `https://dl.vietqr.io/pay?ba=${paymentConfig.bankAccount}&am=${tuitionAmount}&addinfo=${encodeURIComponent(paymentCode)}`;
+              const deepLink = `https://dl.vietqr.io/pay?app=${paymentConfig.bankName.toLowerCase()}&ba=${paymentConfig.bankAccount}&am=${tuitionAmount}&addinfo=${encodeURIComponent(paymentCode)}`;
               return (
                 <div style={{
                   background: 'linear-gradient(145deg, rgba(30,35,60,0.95), rgba(20,24,45,0.98))',
@@ -421,7 +421,7 @@ export default function StudentTuition() {
                       ? `https://qr.sepay.vn/img?acc=${paymentConfig.bankAccount}&bank=${paymentConfig.bankName}&amount=${fee.amount}&des=${encodeURIComponent(feePayCode)}`
                       : '';
                     const feeDeepLink = paymentConfig && !fee.paid
-                      ? `https://dl.vietqr.io/pay?ba=${paymentConfig.bankAccount}&am=${fee.amount}&addinfo=${encodeURIComponent(feePayCode)}`
+                      ? `https://dl.vietqr.io/pay?app=${paymentConfig.bankName.toLowerCase()}&ba=${paymentConfig.bankAccount}&am=${fee.amount}&addinfo=${encodeURIComponent(feePayCode)}`
                       : '';
 
                     if (fee.paid) {
