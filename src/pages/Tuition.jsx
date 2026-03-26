@@ -81,7 +81,8 @@ export default function Tuition() {
     } else {
       // Open partial payment modal
       const student = students.find(s => s.id === studentId);
-      const expected = student?.tuitionAmount || 500000;
+      const overrides = student?.tuitionOverrides || {};
+      const expected = overrides[`${selectedMonth}-${selectedYear}`] ?? student?.tuitionAmount ?? 500000;
       setPayForm({ amount: expected, expectedAmount: expected, note: '' });
       setPayModal({ student });
     }
@@ -109,7 +110,8 @@ export default function Tuition() {
     if (unpaid.length === 0) return;
     try {
       for (const s of unpaid) {
-        const expected = s.tuitionAmount || 500000;
+        const overrides = s.tuitionOverrides || {};
+        const expected = overrides[`${selectedMonth}-${selectedYear}`] ?? s.tuitionAmount ?? 500000;
         await api.post('/payments/toggle', {
           studentId: s.id, month: selectedMonth, year: selectedYear,
           amount: expected, expectedAmount: expected,
@@ -359,7 +361,8 @@ export default function Tuition() {
               const status = getPaymentStatus(student.id);
               const payment = getPayment(student.id);
               const overdue = getOverdueMonths(student.id);
-              const expected = student.tuitionAmount || 500000;
+              const overrides = student.tuitionOverrides || {};
+              const expected = overrides[`${selectedMonth}-${selectedYear}`] ?? student.tuitionAmount ?? 500000;
 
               return (
                 <div
@@ -387,7 +390,34 @@ export default function Tuition() {
                         <span>•</span>
                         <span style={{ color: level.color }}>{level.name}</span>
                         <span>•</span>
-                        <span>{formatMoney(expected)}/tháng</span>
+                        <span
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const isOverridden = overrides[`${selectedMonth}-${selectedYear}`] != null;
+                            const defaultAmount = student.tuitionAmount ?? 500000;
+                            const input = prompt(
+                              `Học phí tháng ${selectedMonth}/${selectedYear} cho ${student.name}\n\nMặc định: ${defaultAmount.toLocaleString()}đ\n\nNhập số tiền mới (để trống = dùng mặc định):`,
+                              isOverridden ? expected : ''
+                            );
+                            if (input === null) return; // cancelled
+                            try {
+                              await api.post(`/students/${student.id}/tuition-override`, {
+                                month: selectedMonth, year: selectedYear,
+                                amount: input === '' ? null : Number(input),
+                              });
+                              addToast(input === '' ? 'Đã xoá ghi đè, dùng mặc định' : `Đã set học phí tháng ${selectedMonth}: ${Number(input).toLocaleString()}đ`);
+                              refetch();
+                            } catch (err) { addToast('Lỗi: ' + err.message, 'error'); }
+                          }}
+                          style={{
+                            cursor: 'pointer',
+                            color: overrides[`${selectedMonth}-${selectedYear}`] != null ? '#f59e0b' : 'inherit',
+                            textDecoration: 'underline dotted',
+                          }}
+                          title="Click để thay đổi học phí tháng này"
+                        >
+                          {formatMoney(expected)}/tháng {overrides[`${selectedMonth}-${selectedYear}`] != null ? '✎' : ''}
+                        </span>
                       </div>
                     </div>
                   </div>

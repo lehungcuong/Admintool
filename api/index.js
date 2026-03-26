@@ -200,4 +200,25 @@ app.post('/api/extra-fee-payments/toggle', auth, async (req, res) => {
   }
 });
 
+// Set/clear tuition override for a specific month
+app.post('/api/students/:id/tuition-override', auth, async (req, res) => {
+  try {
+    const { month, year, amount } = req.body;
+    const Student = (await import('../server/models/Student.js')).default;
+    const student = await Student.findById(req.params.id);
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+
+    const key = `${month}-${year}`;
+    if (amount === null || amount === undefined || amount === '') {
+      student.tuitionOverrides.delete(key);
+    } else {
+      student.tuitionOverrides.set(key, Number(amount));
+    }
+    await student.save();
+    res.json({ success: true, overrides: Object.fromEntries(student.tuitionOverrides) });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 export default app;

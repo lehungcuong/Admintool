@@ -115,11 +115,13 @@ export default function StudentTuition() {
 
   const level = student ? getLevelInfo(student.level) : { name: '—', color: '#888' };
 
-  // Tuition amount: student-specific or global config
-  const tuitionAmount = student?.tuitionAmount || paymentConfig?.tuitionAmount || 500000;
+  // Tuition amount: check per-month override first, then student default, then global
+  const nextUnpaidMonth = months.find(m => m.type !== 'future' && !isPaid(m.month, m.year));
+  const overrides = student?.tuitionOverrides || {};
+  const monthKey = nextUnpaidMonth ? `${nextUnpaidMonth.month}-${nextUnpaidMonth.year}` : '';
+  const tuitionAmount = (monthKey && overrides[monthKey]) ?? student?.tuitionAmount ?? paymentConfig?.tuitionAmount ?? 500000;
 
   // QR code: tạo nội dung chuyển khoản cho tháng chưa đóng gần nhất
-  const nextUnpaidMonth = months.find(m => m.type !== 'future' && !isPaid(m.month, m.year));
   const paymentCode = nextUnpaidMonth && user?.username
     ? `EH ${user.username} ${nextUnpaidMonth.month} ${nextUnpaidMonth.year}`
     : '';

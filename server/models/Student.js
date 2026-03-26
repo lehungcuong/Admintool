@@ -8,6 +8,7 @@ const studentSchema = new mongoose.Schema({
   status: { type: String, enum: ['active', 'inactive'], default: 'active' },
   enrolledAt: { type: Date, default: Date.now },
   tuitionAmount: { type: Number, default: 500000 },
+  tuitionOverrides: { type: Map, of: Number, default: {} },
 }, { timestamps: true });
 
 export default mongoose.model('Student', studentSchema);
