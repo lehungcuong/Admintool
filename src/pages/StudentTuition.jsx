@@ -397,7 +397,7 @@ export default function StudentTuition() {
 
                   {/* Action buttons */}
                   <div style={{ padding: '0 20px 16px', display: 'flex', gap: 10 }}>
-                    <button onClick={() => setBankPicker({ ba: paymentConfig.bankAccount, am: tuitionAmount, addinfo: paymentCode })} style={{
+                    <button onClick={() => setBankPicker({ ba: paymentConfig.bankAccount, bankId: paymentConfig.bankName.toLowerCase(), am: tuitionAmount, tn: paymentCode, bn: paymentConfig.beneficiary })} style={{
                       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                       padding: '12px 16px', borderRadius: 10, border: 'none', cursor: 'pointer',
                       background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff',
@@ -496,7 +496,7 @@ export default function StudentTuition() {
                               </div>
 
                               {/* Bank app button */}
-                              <button onClick={() => setBankPicker({ ba: paymentConfig.bankAccount, am: fee.amount, addinfo: feePayCode })} style={{
+                              <button onClick={() => setBankPicker({ ba: paymentConfig.bankAccount, bankId: paymentConfig.bankName.toLowerCase(), am: fee.amount, tn: feePayCode, bn: paymentConfig.beneficiary })} style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%',
                                 padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
                                 background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff',
@@ -652,7 +652,7 @@ export default function StudentTuition() {
               {VN_BANKS.map(bank => (
                 <a
                   key={bank.code}
-                  href={`https://dl.vietqr.io/pay?app=${bank.code}&ba=${bankPicker.ba}&am=${bankPicker.am}&addinfo=${encodeURIComponent(bankPicker.addinfo)}`}
+                  href={`https://dl.vietqr.io/pay?app=${bank.code}&ba=${bankPicker.ba}@${bankPicker.bankId}&am=${bankPicker.am}&tn=${encodeURIComponent(bankPicker.tn)}&bn=${encodeURIComponent(bankPicker.bn)}`}
                   target="_blank" rel="noopener noreferrer"
                   onClick={() => setBankPicker(null)}
                   style={{
