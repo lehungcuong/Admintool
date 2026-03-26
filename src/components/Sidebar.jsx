@@ -68,9 +68,7 @@ export default function Sidebar() {
 
       <aside className={`sidebar ${mobileOpen ? 'sidebar-open' : ''}`}>
         <div className="sidebar-logo">
-          <div className="logo-icon">
-            <HiOutlineSparkles />
-          </div>
+          <img src="/logo.png" alt="Logo" style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: '50%', background: '#fff', padding: 2, flexShrink: 0 }} />
           <div className="logo-text">
             <h2>Anh Ngữ Phúc Ngôn</h2>
             <span>Quản lý</span>

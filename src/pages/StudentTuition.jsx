@@ -159,7 +159,7 @@ export default function StudentTuition() {
       <div className="student-page">
         <header className="student-header">
           <div className="student-header-left">
-            <div className="student-header-logo"><HiOutlineSparkles /></div>
+            <img src="/logo.png" alt="Logo" style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: '50%', background: '#fff', padding: 2 }} />
             <h2>Anh Ngữ Phúc Ngôn</h2>
           </div>
           <button className="logout-btn" onClick={logout}>
@@ -182,7 +182,7 @@ export default function StudentTuition() {
       {/* Header */}
       <header className="student-header">
         <div className="student-header-left">
-          <div className="student-header-logo"><HiOutlineSparkles /></div>
+          <img src="/logo.png" alt="Logo" style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: '50%', background: '#fff', padding: 2 }} />
           <h2>Anh Ngữ Phúc Ngôn</h2>
         </div>
         <div className="student-header-right">

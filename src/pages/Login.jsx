@@ -31,9 +31,7 @@ export default function Login() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-logo">
-          <div className="login-logo-icon">
-            <HiOutlineSparkles />
-          </div>
+          <img src="/logo.png" alt="Phuc Ngon English Center" style={{ width: 120, height: 120, objectFit: 'contain', marginBottom: 8 }} />
           <h1>Anh Ngữ Phúc Ngôn</h1>
           <p>Đăng nhập để tiếp tục</p>
         </div>
