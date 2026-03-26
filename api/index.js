@@ -5,27 +5,42 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 
-import authRoutes from './routes/auth.js';
-import studentsRoutes from './routes/students.js';
-import paymentsRoutes from './routes/payments.js';
-import { createCrudRoutes } from './routes/crud.js';
-import { auth } from './middleware/auth.js';
+import authRoutes from '../server/routes/auth.js';
+import studentsRoutes from '../server/routes/students.js';
+import paymentsRoutes from '../server/routes/payments.js';
+import { createCrudRoutes } from '../server/routes/crud.js';
+import { auth } from '../server/middleware/auth.js';
 
-import Teacher from './models/Teacher.js';
-import Class from './models/Class.js';
-import Enrollment from './models/Enrollment.js';
-import Schedule from './models/Schedule.js';
-import ExtraFee from './models/ExtraFee.js';
-import ExtraFeePayment from './models/ExtraFeePayment.js';
+import Teacher from '../server/models/Teacher.js';
+import Class from '../server/models/Class.js';
+import Enrollment from '../server/models/Enrollment.js';
+import Schedule from '../server/models/Schedule.js';
+import ExtraFee from '../server/models/ExtraFee.js';
+import ExtraFeePayment from '../server/models/ExtraFeePayment.js';
 
-import User from './models/User.js';
-import Payment from './models/Payment.js';
+import User from '../server/models/User.js';
+import Payment from '../server/models/Payment.js';
 
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+
+// Connect to MongoDB (cached for serverless)
+let isConnected = false;
+app.use(async (req, res, next) => {
+  if (!isConnected && process.env.MONGODB_URI) {
+    try {
+      await mongoose.connect(process.env.MONGODB_URI);
+      isConnected = true;
+    } catch (err) {
+      console.error('MongoDB error:', err.message);
+      return res.status(500).json({ error: 'Database connection failed' });
+    }
+  }
+  next();
+});
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -112,7 +127,7 @@ app.post('/api/extra-fees/:feeId/charge-all', auth, async (req, res) => {
   try {
     const fee = await ExtraFee.findById(req.params.feeId);
     if (!fee) return res.status(404).json({ error: 'Fee not found' });
-    const Student = (await import('./models/Student.js')).default;
+    const Student = (await import('../server/models/Student.js')).default;
     let students = await Student.find({ status: 'active' });
 
     // Filter by level
@@ -159,17 +174,4 @@ app.post('/api/extra-fee-payments/toggle', auth, async (req, res) => {
   }
 });
 
-// Connect to MongoDB and start server
-const PORT = process.env.PORT || 5000;
-
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('✅ Connected to MongoDB Atlas');
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error('❌ MongoDB connection error:', err.message);
-    process.exit(1);
-  });
+export default app;
