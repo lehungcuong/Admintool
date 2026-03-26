@@ -721,6 +721,10 @@
   .stu-schedule-item { flex-direction: column; gap: 6px; }
 }
 
+@media (min-width: 768px) {
+  .mobile-only { display: none !important; }
+}
+
 @keyframes slideUp {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }

@@ -397,8 +397,8 @@ export default function StudentTuition() {
                     </div>
                   </div>
 
-                  {/* Action buttons */}
-                  <div style={{ padding: '0 20px 16px', display: 'flex', gap: 10 }}>
+                  {/* Action buttons — mobile only */}
+                  <div className="mobile-only" style={{ padding: '0 20px 16px', display: 'flex', gap: 10 }}>
                     <button onClick={() => setBankPicker({ ba: paymentConfig.bankAccount, bankId: paymentConfig.bankName.toLowerCase(), am: tuitionAmount, tn: paymentCode, bn: paymentConfig.beneficiary })} style={{
                       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                       padding: '12px 16px', borderRadius: 10, border: 'none', cursor: 'pointer',
@@ -497,8 +497,8 @@ export default function StudentTuition() {
                                 </div>
                               </div>
 
-                              {/* Bank app button */}
-                              <button onClick={() => setBankPicker({ ba: paymentConfig.bankAccount, bankId: paymentConfig.bankName.toLowerCase(), am: fee.amount, tn: feePayCode, bn: paymentConfig.beneficiary })} style={{
+                              {/* Bank app button — mobile only */}
+                              <button className="mobile-only" onClick={() => setBankPicker({ ba: paymentConfig.bankAccount, bankId: paymentConfig.bankName.toLowerCase(), am: fee.amount, tn: feePayCode, bn: paymentConfig.beneficiary })} style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%',
                                 padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
                                 background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff',
