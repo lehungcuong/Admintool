@@ -521,17 +521,17 @@ export default function StudentTuition() {
                   {mySchedule.length === 0 ? (
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Chưa có lịch học nào được thiết lập cho lớp của bạn.</p>
                   ) : (
-                    <div className="schedule-grid">
+                    <div className="stu-schedule-grid">
                       {mySchedule.map((sch, i) => {
                         const cls = classes.find(c => c.id === sch.classId);
                         return (
-                          <div key={i} className="schedule-item">
-                            <div className="schedule-day">{DAY_NAMES[sch.day] || sch.day}</div>
-                            <div className="schedule-info">
-                              <div className="schedule-time">{sch.time || '—'}</div>
-                              <div className="schedule-class">{cls?.name || '—'}</div>
-                              {sch.room && <div className="schedule-room"><HiOutlineLocationMarker /> {sch.room}</div>}
-                              <div className="schedule-teacher"><HiOutlineAcademicCap /> {getTeacherName(cls?.teacherId)}</div>
+                          <div key={i} className="stu-schedule-item">
+                            <div className="stu-schedule-day">{DAY_NAMES[sch.day] || sch.day}</div>
+                            <div className="stu-schedule-info">
+                              <div className="stu-schedule-time">{sch.time || '—'}</div>
+                              <div className="stu-schedule-class">{cls?.name || '—'}</div>
+                              {sch.room && <div className="stu-schedule-room"><HiOutlineLocationMarker /> {sch.room}</div>}
+                              <div className="stu-schedule-teacher"><HiOutlineAcademicCap /> {getTeacherName(cls?.teacherId)}</div>
                             </div>
                           </div>
                         );

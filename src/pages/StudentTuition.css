@@ -647,13 +647,13 @@
 }
 
 /* Weekly Schedule Grid */
-.schedule-grid {
+.stu-schedule-grid {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.schedule-item {
+.stu-schedule-item {
   display: flex;
   align-items: flex-start;
   gap: 16px;
@@ -664,11 +664,11 @@
   transition: all 0.2s ease;
 }
 
-.schedule-item:hover {
+.stu-schedule-item:hover {
   background: rgba(255, 255, 255, 0.06);
 }
 
-.schedule-day {
+.stu-schedule-day {
   min-width: 60px;
   font-weight: 700;
   font-size: 0.85rem;
@@ -676,7 +676,7 @@
   padding-top: 2px;
 }
 
-.schedule-info {
+.stu-schedule-info {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 16px;
@@ -684,18 +684,18 @@
   color: var(--text-secondary);
 }
 
-.schedule-time {
+.stu-schedule-time {
   font-weight: 700;
   color: var(--text-primary);
 }
 
-.schedule-class {
+.stu-schedule-class {
   color: var(--text-primary);
   font-weight: 600;
 }
 
-.schedule-room,
-.schedule-teacher {
+.stu-schedule-room,
+.stu-schedule-teacher {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -718,5 +718,5 @@
 
 @media (max-width: 480px) {
   .months-grid { grid-template-columns: repeat(2, 1fr); }
-  .schedule-item { flex-direction: column; gap: 6px; }
+  .stu-schedule-item { flex-direction: column; gap: 6px; }
 }
