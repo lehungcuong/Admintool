@@ -720,3 +720,8 @@
   .months-grid { grid-template-columns: repeat(2, 1fr); }
   .stu-schedule-item { flex-direction: column; gap: 6px; }
 }
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}

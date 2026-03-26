@@ -22,6 +22,21 @@ const MONTH_NAMES = [
 const DAY_NAMES = { mon: 'Thứ 2', tue: 'Thứ 3', wed: 'Thứ 4', thu: 'Thứ 5', fri: 'Thứ 6', sat: 'Thứ 7', sun: 'CN' };
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
+const VN_BANKS = [
+  { code: 'bidv', name: 'BIDV', color: '#00539f' },
+  { code: 'vietcombank', name: 'Vietcombank', color: '#00693e' },
+  { code: 'techcombank', name: 'Techcombank', color: '#e31837' },
+  { code: 'mbbank', name: 'MB Bank', color: '#1e4d8c' },
+  { code: 'acb', name: 'ACB', color: '#1a1a6c' },
+  { code: 'tpbank', name: 'TPBank', color: '#5b2d8e' },
+  { code: 'sacombank', name: 'Sacombank', color: '#003399' },
+  { code: 'vpbank', name: 'VPBank', color: '#00843d' },
+  { code: 'agribank', name: 'Agribank', color: '#e4002b' },
+  { code: 'vietinbank', name: 'VietinBank', color: '#003a70' },
+  { code: 'hdbank', name: 'HDBank', color: '#e21a22' },
+  { code: 'ocb', name: 'OCB', color: '#004b87' },
+];
+
 export default function StudentTuition() {
   const { user, logout, roleLabel } = useAuth();
   const addToast = useToast();
@@ -35,7 +50,8 @@ export default function StudentTuition() {
   const [extraFeePayments] = useApi('/extra-fee-payments');
   const [paymentConfig, setPaymentConfig] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState('tuition'); // 'tuition' | 'schedule'
+  const [activeTab, setActiveTab] = useState('tuition');
+  const [bankPicker, setBankPicker] = useState(null); // null or { ba, am, addinfo }
 
   // Lấy config thanh toán (bank info)
   useEffect(() => {
@@ -378,20 +394,19 @@ export default function StudentTuition() {
 
                   {/* Action buttons */}
                   <div style={{ padding: '0 20px 16px', display: 'flex', gap: 10 }}>
-                    <a href={deepLink} target="_blank" rel="noopener noreferrer" style={{
+                    <button onClick={() => setBankPicker({ ba: paymentConfig.bankAccount, am: tuitionAmount, addinfo: paymentCode })} style={{
                       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                      padding: '12px 16px', borderRadius: 10,
+                      padding: '12px 16px', borderRadius: 10, border: 'none', cursor: 'pointer',
                       background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff',
-                      fontWeight: 700, fontSize: '0.88rem', textDecoration: 'none',
+                      fontWeight: 700, fontSize: '0.88rem',
                       boxShadow: '0 4px 12px rgba(99,102,241,0.4)',
-                      transition: 'transform 0.2s, box-shadow 0.2s',
                     }}>
                       🏦 Mở app ngân hàng
-                    </a>
+                    </button>
                   </div>
 
                   <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '0 20px 14px' }}>
-                    Ghi đúng nội dung CK để hệ thống tự động xác nhận • Hỗ trợ tất cả ngân hàng
+                    Ghi đúng nội dung CK để hệ thống tự động xác nhận
                   </div>
                 </div>
               );
@@ -478,15 +493,15 @@ export default function StudentTuition() {
                               </div>
 
                               {/* Bank app button */}
-                              <a href={feeDeepLink} target="_blank" rel="noopener noreferrer" style={{
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                                padding: '8px 14px', borderRadius: 8,
+                              <button onClick={() => setBankPicker({ ba: paymentConfig.bankAccount, am: fee.amount, addinfo: feePayCode })} style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%',
+                                padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
                                 background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff',
-                                fontWeight: 600, fontSize: '0.78rem', textDecoration: 'none',
+                                fontWeight: 600, fontSize: '0.78rem',
                                 boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
                               }}>
                                 🏦 Mở app ngân hàng
-                              </a>
+                              </button>
                             </div>
                           </div>
                         )}
@@ -600,6 +615,68 @@ export default function StudentTuition() {
           </a>
         </div>
       </div>
+
+      {/* Bank Picker Modal */}
+      {bankPicker && (
+        <div onClick={() => setBankPicker(null)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          zIndex: 9999, padding: '0 0 0',
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: 'linear-gradient(145deg, #1e2340, #161a30)',
+            borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 420,
+            maxHeight: '80vh', overflow: 'auto',
+            boxShadow: '0 -8px 40px rgba(0,0,0,0.5)',
+            animation: 'slideUp 0.3s ease',
+          }}>
+            {/* Handle bar */}
+            <div style={{ textAlign: 'center', padding: '12px 0 4px' }}>
+              <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)', margin: '0 auto' }} />
+            </div>
+
+            <div style={{ padding: '8px 20px 12px' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', color: '#fff', fontWeight: 700 }}>Chọn ngân hàng của bạn</h3>
+              <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+                Chọn app ngân hàng bạn muốn mở để thanh toán
+              </p>
+            </div>
+
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8,
+              padding: '4px 16px 24px',
+            }}>
+              {VN_BANKS.map(bank => (
+                <a
+                  key={bank.code}
+                  href={`https://dl.vietqr.io/pay?app=${bank.code}&ba=${bankPicker.ba}&am=${bankPicker.am}&addinfo=${encodeURIComponent(bankPicker.addinfo)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  onClick={() => setBankPicker(null)}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    padding: '14px 6px', borderRadius: 12,
+                    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                    textDecoration: 'none', cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 10,
+                    background: bank.color, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 800, fontSize: '0.6rem', color: '#fff', letterSpacing: 0.5,
+                    boxShadow: `0 2px 8px ${bank.color}55`,
+                  }}>
+                    {bank.name.slice(0, 3).toUpperCase()}
+                  </div>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', textAlign: 'center' }}>
+                    {bank.name}
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
