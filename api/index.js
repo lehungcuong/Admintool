@@ -63,18 +63,44 @@ app.post('/api/webhook/sepay', async (req, res) => {
 
     if (transferType !== 'in') return res.json({ success: true, message: 'Ignored: not incoming' });
 
-    const existingRef = await Payment.findOne({ referenceCode });
-    if (existingRef) return res.json({ success: true, message: 'Duplicate: already processed' });
+    const upperContent = (content || '').toUpperCase();
 
-    const match = (content || '').toUpperCase().match(/EH\s+(\S+)\s+(\d{1,2})\s+(\d{4})/);
-    if (!match) {
+    // --- Pattern 1: Extra fee — EH {USERNAME} PHI{SHORTID} ---
+    const feeMatch = upperContent.match(/EH\s+(\S+)\s+PHI([A-Z0-9]{6})/);
+    if (feeMatch) {
+      const [, usernameCode, shortId] = feeMatch;
+      const userAccount = await User.findOne({ username: usernameCode.toLowerCase() });
+      if (!userAccount || !userAccount.studentId) {
+        return res.json({ success: true, message: 'Student not found for extra fee' });
+      }
+
+      const allFeePayments = await ExtraFeePayment.find({ studentId: userAccount.studentId.toString(), paid: false });
+      const matched = allFeePayments.find(fp => fp.feeId.slice(-6).toUpperCase() === shortId);
+
+      if (!matched) {
+        return res.json({ success: true, message: 'Extra fee payment not found or already paid' });
+      }
+
+      matched.paid = true;
+      await matched.save();
+
+      console.log(`✅ SePay: Auto-confirmed extra fee for ${usernameCode} - PHI${shortId}`);
+      return res.status(200).json({ success: true });
+    }
+
+    // --- Pattern 2: Tuition — EH {USERNAME} {MONTH} {YEAR} ---
+    const tuitionMatch = upperContent.match(/EH\s+(\S+)\s+(\d{1,2})\s+(\d{4})/);
+    if (!tuitionMatch) {
       console.log('SePay webhook: no matching code in content:', content);
       return res.json({ success: true, message: 'No payment code found' });
     }
 
-    const [, usernameCode, monthStr, yearStr] = match;
+    const [, usernameCode, monthStr, yearStr] = tuitionMatch;
     const month = parseInt(monthStr);
     const year = parseInt(yearStr);
+
+    const existingRef = await Payment.findOne({ referenceCode });
+    if (existingRef) return res.json({ success: true, message: 'Duplicate: already processed' });
 
     const userAccount = await User.findOne({ username: usernameCode.toLowerCase() });
     if (!userAccount || !userAccount.studentId) {
@@ -94,7 +120,7 @@ app.post('/api/webhook/sepay', async (req, res) => {
       paymentMethod: 'bank_transfer',
     });
 
-    console.log(`✅ SePay: Auto-confirmed payment for ${usernameCode} - ${month}/${year}`);
+    console.log(`✅ SePay: Auto-confirmed tuition for ${usernameCode} - ${month}/${year}`);
     return res.status(200).json({ success: true });
   } catch (e) {
     console.error('SePay webhook error:', e);
